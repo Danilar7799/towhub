@@ -191,6 +191,38 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Map Provider */}
+      <div className="bg-white border border-[#e5edf5] rounded-lg p-6">
+        <div className="text-[14px] font-medium text-[#061b31] mb-4">🗺️ Map Provider</div>
+        <p className="text-[13px] text-[#64748d] mb-4">Choose which map service to use for dispatch and tracking.</p>
+        <div className="space-y-2">
+          {[
+            { id: "osm", name: "OpenStreetMap", desc: "Free, no API key needed", icon: "🌍", free: true },
+            { id: "google", name: "Google Maps", desc: "Best quality, needs API key", icon: "🗺️", free: false },
+            { id: "mapbox", name: "Mapbox", desc: "Styling options, needs API key", icon: "📍", free: false },
+          ].map(m => (
+            <div key={m.id} className="flex items-center justify-between p-4 border border-[#e5edf5] rounded-lg hover:border-[#b9b9f9] transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <span className="text-[20px]">{m.icon}</span>
+                <div>
+                  <div className="text-[13px] font-medium text-[#061b31]">{m.name}</div>
+                  <div className="text-[11px] text-[#64748d]">{m.desc}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {m.free && <span className="text-[10px] bg-[#dcfce7] text-[#166534] px-1.5 py-0.5 rounded font-medium">Free</span>}
+                <div className={`w-4 h-4 rounded-full border-2 ${m.id === "osm" ? "border-[#533afd] bg-[#533afd]" : "border-[#e5edf5]"}`}>
+                  {m.id === "osm" && <svg className="w-3 h-3 text-white m-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 text-[11px] text-[#64748d]">
+          Currently using <strong>OpenStreetMap</strong> (free). Add Google Maps API key in .env to enable Google Maps.
+        </div>
+      </div>
+
       {/* Integrations */}
       <div className="bg-white border border-[#e5edf5] rounded-lg p-6">
         <div className="text-[14px] font-medium text-[#061b31] mb-4">🔗 Integrations</div>
