@@ -1,19 +1,50 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #1e40af;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1e3a8a;
-  --color-accent: #f59e0b;
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --color-bg: #ffffff;
+  --color-text: #061b31;
+  --color-body: #64748d;
+  --color-label: #273951;
+  --color-border: #e5edf5;
+  --color-surface: #f6f9fc;
+  --color-accent: #533afd;
+  --color-accent-hover: #4434d4;
+  --color-success: #15be53;
+  --color-brand-dark: #1c1e54;
+  --color-magenta: #f96bee;
+  --color-ruby: #ea2261;
 }
+
+body {
+  font-family: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: "ss01";
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Stripe-style shadows */
+.shadow-stripe {
+  box-shadow: 0 50px 100px -20px rgba(50,50,93,0.25), 0 30px 60px -30px rgba(0,0,0,0.1);
+}
+
+.shadow-stripe-sm {
+  box-shadow: 0 15px 35px rgba(50,50,93,0.08);
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #f6f9fc; }
+::-webkit-scrollbar-thumb { background: #c5cdd8; border-radius: 3px; }
 
-/* Smooth transitions */
-* { transition-property: background-color, border-color, color, fill, stroke; transition-duration: 150ms; }
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #533afd;
+  outline-offset: 2px;
+}
