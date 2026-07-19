@@ -572,3 +572,44 @@ export const policeReportsRelations = relations(policeReports, ({ one }) => ({
 export const auctionListingsRelations = relations(auctionListings, ({ one }) => ({
   organization: one(organizations, { fields: [auctionListings.orgId], references: [organizations.id] }),
 }));
+
+// ========== MESSAGES (In-app chat with auto-translation) ==========
+export const messages = pgTable("messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  conversationId: text("conversation_id").notNull(),
+  senderId: uuid("sender_id").references(() => users.id).notNull(),
+  receiverId: uuid("receiver_id").references(() => users.id).notNull(),
+  jobId: uuid("job_id").references(() => jobs.id),
+  text: text("text").notNull(),
+  translatedText: text("translated_text"),
+  detectedLanguage: text("detected_language"),
+  targetLanguage: text("target_language"),
+  isTranslated: boolean("is_translated").default(false),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
+  receiver: one(users, { fields: [messages.receiverId], references: [users.id] }),
+  job: one(jobs, { fields: [messages.jobId], references: [jobs.id] }),
+}));
+
+// ========== CUSTOMER RATINGS ==========
+export const ratings = pgTable("ratings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  jobId: uuid("job_id").references(() => jobs.id).notNull(),
+  customerId: uuid("customer_id").references(() => customers.id),
+  driverId: uuid("driver_id").references(() => users.id),
+  rating: integer("rating").notNull(), // 1-5
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ratingsRelations = relations(ratings, ({ one }) => ({
+  organization: one(organizations, { fields: [ratings.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [ratings.jobId], references: [jobs.id] }),
+  customer: one(customers, { fields: [ratings.customerId], references: [customers.id] }),
+  driver: one(users, { fields: [ratings.driverId], references: [users.id] }),
+}));
