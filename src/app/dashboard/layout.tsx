@@ -15,16 +15,19 @@ const NAV_ITEMS = [
   { href: "/dashboard/fleet", icon: "truck", label: "Fleet" },
   { href: "/dashboard/drivers", icon: "users", label: "Team" },
   { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors" },
-  { href: "/dashboard/leads", icon: "link", label: "Leads" },
   { href: "/dashboard/contracts", icon: "file-text", label: "Contracts" },
+  { href: "/dashboard/leads", icon: "link", label: "Leads" },
   { href: "/dashboard/invoices", icon: "file", label: "Invoices" },
   { href: "/dashboard/expenses", icon: "dollar", label: "Expenses" },
   { href: "/dashboard/earnings", icon: "trending-up", label: "Earnings" },
   { href: "/dashboard/reports", icon: "bar-chart", label: "Reports" },
   { href: "/dashboard/impound", icon: "archive", label: "Impound" },
+  { href: "/dashboard/auctions", icon: "gavel", label: "Auctions" },
   { href: "/dashboard/rates", icon: "tag", label: "Rates" },
   { href: "/dashboard/billing", icon: "credit-card", label: "Billing" },
   { href: "/dashboard/settings", icon: "settings", label: "Settings" },
+  { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks" },
+  { href: "/dashboard/import", icon: "download", label: "Import/Export" },
 ];
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -49,6 +52,11 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
     logOut: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
     search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>,
     bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>,
+    download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
+    building: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22V12h6v10" /><path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01" /></svg>,
+    "file-text": <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>,
+    "credit-card": <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>,
+    gavel: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2l5 5-7 7-5-5z" /><path d="M9.5 12l-5 5 2 2 5-5" /><line x1="2" y1="22" x2="7" y2="17" /></svg>,
   };
   return <>{icons[name] || null}</>;
 }
