@@ -38,6 +38,8 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
     tag: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>,
     settings: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>,
     logOut: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
+    search: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>,
+    bell: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>,
   };
   return <>{icons[name] || null}</>;
 }
@@ -48,6 +50,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<{ firstName: string; lastName: string; role: string; email: string } | null>(null);
   const [org, setOrg] = useState<{ name: string; status: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const checkAuth = useCallback(async () => {
     const res = await fetch("/api/auth/me");
@@ -140,16 +144,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Header */}
         <header className="h-14 bg-white/80 backdrop-blur-xl border-b border-[#e5edf5] px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-[#64748d]">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-[#64748d] p-1">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
             </button>
             <h1 className="text-[15px] font-medium text-[#061b31]" style={{ fontFeatureSettings: "'ss01'" }}>
               {NAV_ITEMS.find(n => n.href === pathname)?.label || "Dashboard"}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block">
-              View dispatch →
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            {searchOpen ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search jobs, customers..."
+                  className="w-[200px] px-3 py-1.5 border border-[#e5edf5] rounded text-[12px] focus:border-[#533afd] outline-none"
+                  autoFocus
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                />
+                <button onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-[#64748d] text-[12px]">✕</button>
+              </div>
+            ) : (
+              <button onClick={() => setSearchOpen(true)} className="text-[#64748d] hover:text-[#061b31] p-1.5 transition-colors" title="Search">
+                <Icon name="search" size={16} />
+              </button>
+            )}
+            {/* Notifications */}
+            <button className="relative text-[#64748d] hover:text-[#061b31] p-1.5 transition-colors" title="Notifications">
+              <Icon name="bell" size={16} />
+              <div className="absolute top-1 right-1 w-2 h-2 bg-[#ea2261] rounded-full" />
+            </button>
+            {/* Dispatch link */}
+            <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block ml-2">
+              Dispatch →
             </a>
           </div>
         </header>

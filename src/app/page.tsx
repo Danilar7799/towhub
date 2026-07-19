@@ -274,7 +274,7 @@ export default function Home() {
             <a href="#" className="text-[13px] text-[#64748d] hover:text-[#061b31]">Terms</a>
             <a href="#" className="text-[13px] text-[#64748d] hover:text-[#061b31]">Contact</a>
           </div>
-          <div className="text-[13px] text-[#64748d]">© 2024 TowHub. All rights reserved.</div>
+          <div className="text-[13px] text-[#64748d]">© 2026 TowHub. All rights reserved.</div>
         </div>
       </footer>
 
