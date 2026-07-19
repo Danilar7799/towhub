@@ -102,22 +102,22 @@ export default function CompaniesPage() {
             </div>
 
             {/* Onboarding data */}
-            {selected.settings && (selected.settings as Record<string, unknown>).onboarding && (
+            {selected.settings && typeof selected.settings === 'object' && 'onboarding' in selected.settings && selected.settings.onboarding && (
               <div>
                 <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Onboarding</div>
                 <div className="space-y-1 text-[13px]">
                   {(() => {
-                    const ob = (selected.settings as Record<string, unknown>).onboarding as Record<string, unknown>;
+                    const ob = selected.settings.onboarding as Record<string, string | boolean | number>;
                     return <>
-                      {ob.fleetSize && <div>🚛 Fleet: {ob.fleetSize} vehicles</div>}
-                      {ob.driverCount && <div>👥 Drivers: {ob.driverCount}</div>}
+                      {ob.fleetSize && <div>🚛 Fleet: {String(ob.fleetSize)} vehicles</div>}
+                      {ob.driverCount && <div>👥 Drivers: {String(ob.driverCount)}</div>}
                       {ob.scheduleType && <div>⏰ Schedule: {ob.scheduleType === "24_7" ? "24/7" : ob.scheduleType === "day_only" ? "Day only" : "Custom"}</div>}
                       <div>📜 Police Rotation: {ob.hasPoliceRotation ? "Yes" : "No"}</div>
                       <div>🅿️ Impound Lot: {ob.hasImpoundLot ? "Yes" : "No"}</div>
                       <div>🤖 AI Dispatcher: {ob.needsAiDispatcher ? "Yes" : "No"}</div>
                       <div>🔗 Lead Capture: {ob.needsLeadCapture ? "Yes" : "No"}</div>
                       <div>📄 AI Docs: {ob.needsAiDocuments ? "Yes" : "No"}</div>
-                      {ob.ownerName && <div>👤 Owner: {ob.ownerName}</div>}
+                      {ob.ownerName && <div>👤 Owner: {String(ob.ownerName)}</div>}
                     </>;
                   })()}
                 </div>
@@ -125,11 +125,11 @@ export default function CompaniesPage() {
             )}
 
             {/* Upsell recommendations */}
-            {selected.settings && (selected.settings as Record<string, unknown>).upsellRecommendations && (
+            {selected.settings && typeof selected.settings === 'object' && 'upsellRecommendations' in selected.settings && selected.settings.upsellRecommendations && (
               <div>
                 <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Upsell Opportunities</div>
                 <div className="space-y-2">
-                  {((selected.settings as Record<string, unknown>).upsellRecommendations as Array<{ feature: string; title: string; desc: string; priority: string; price: string }>).map((u, i) => (
+                  {(selected.settings.upsellRecommendations as Array<{ feature: string; title: string; desc: string; priority: string; price: string }>).map((u, i) => (
                     <div key={i} className="p-3 bg-[#f6f9fc] border border-[#e5edf5] rounded-lg">
                       <div className="flex items-center justify-between">
                         <div className="text-[12px] font-medium">{u.title}</div>
