@@ -25,7 +25,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: string
 
 export default function TrackPage() {
   const [query, setQuery] = useState("");
-  const [job, setJob] = useState<Record<string, unknown> | null>(null);
+  const [job, setJob] = useState<{ id: string; status: string; pickupAddress: string; destinationAddress?: string; totalAmount?: number; isPaid: boolean; towVehicleMake?: string; towVehicleModel?: string; towVehicleYear?: number; towVehicleColor?: string; towVehiclePlate?: string; createdAt: string; estimatedArrival?: string } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,9 +50,9 @@ export default function TrackPage() {
     }
   };
 
-  const status = job ? STATUS_LABELS[job.status as string] || STATUS_LABELS.pending : null;
+  const status = job ? STATUS_LABELS[job.status] || STATUS_LABELS.pending : null;
   const steps = ["pending", "assigned", "en_route", "on_scene", "towing", "completed"];
-  const currentStep = job ? steps.indexOf(job.status as string) : -1;
+  const currentStep = job ? steps.indexOf(job.status) : -1;
 
   return (
     <div className="min-h-screen bg-[#f6f9fc]" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
@@ -90,7 +90,7 @@ export default function TrackPage() {
                 <span className="text-[32px]">{status.icon}</span>
                 <div>
                   <div className="text-[18px] font-semibold" style={{ color: status.color }}>{status.label}</div>
-                  <div className="text-[13px] text-[#64748d]">Job #{(job.id as string).slice(0, 8)}</div>
+                  <div className="text-[13px] text-[#64748d]">Job #{(job.id).slice(0, 8)}</div>
                 </div>
               </div>
 
@@ -108,9 +108,9 @@ export default function TrackPage() {
 
               {/* Details */}
               <div className="space-y-2 text-[14px]">
-                <div className="flex justify-between"><span className="text-[#64748d]">From:</span><span className="font-medium">{job.pickupAddress as string}</span></div>
-                {job.destinationAddress && <div className="flex justify-between"><span className="text-[#64748d]">To:</span><span className="font-medium">{job.destinationAddress as string}</span></div>}
-                {job.totalAmount && <div className="flex justify-between"><span className="text-[#64748d]">Total:</span><span className="font-semibold">${(job.totalAmount as number).toFixed(2)}</span></div>}
+                <div className="flex justify-between"><span className="text-[#64748d]">From:</span><span className="font-medium">{job.pickupAddress}</span></div>
+                {job.destinationAddress && <div className="flex justify-between"><span className="text-[#64748d]">To:</span><span className="font-medium">{job.destinationAddress}</span></div>}
+                {job.totalAmount && <div className="flex justify-between"><span className="text-[#64748d]">Total:</span><span className="font-semibold">${(job.totalAmount).toFixed(2)}</span></div>}
                 <div className="flex justify-between"><span className="text-[#64748d]">Payment:</span><span className={job.isPaid ? "text-[#22c55e] font-medium" : "text-[#f59e0b] font-medium"}>{job.isPaid ? "Paid" : "Due on delivery"}</span></div>
               </div>
             </div>
