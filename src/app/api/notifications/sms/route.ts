@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   // If Twilio is configured, send SMS
   if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
     try {
-      const twilio = (await import("twilio" as string)).default;
+      const twilio = (await import("twilio")).default;
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
       await client.messages.create({
