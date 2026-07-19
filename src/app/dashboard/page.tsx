@@ -52,9 +52,9 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
           { label: "Active Jobs", value: stats.activeJobs, accent: "#533afd" },
-          { label: "Today&apos;s Jobs", value: stats.todayJobs, accent: "#061b31" },
+          { label: "Today\u2019s Jobs", value: stats.todayJobs, accent: "#061b31" },
           { label: "Drivers Online", value: stats.activeDrivers, accent: "#15be53" },
-          { label: "Today&apos;s Revenue", value: `$${stats.todayRevenue.toFixed(0)}`, accent: "#061b31" },
+          { label: "Today\u2019s Revenue", value: `$${stats.todayRevenue.toFixed(0)}`, accent: "#061b31" },
           { label: "Pending Leads", value: stats.pendingLeads, accent: "#ea2261" },
           { label: "Vehicles", value: stats.totalVehicles, accent: "#061b31" },
         ].map((s, i) => (
