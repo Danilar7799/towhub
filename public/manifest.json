@@ -1,0 +1,20 @@
+{
+  "name": "TowHub — Towing Management Platform",
+  "short_name": "TowHub",
+  "description": "AI-powered dispatching, fleet tracking, lead management for towing companies.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#533afd",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false
+}
