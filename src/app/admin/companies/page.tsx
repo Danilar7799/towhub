@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 interface Org {
   id: string; name: string; slug: string; email: string; phone?: string;
   city?: string; state?: string; status: string; commissionPercent?: number;
-  apiKey?: string; createdAt: string; settings?: Record<string, unknown>;
+  apiKey?: string; createdAt: string; settings?: Record<string, unknown> & { onboarding?: Record<string, string | boolean | number>; upsellRecommendations?: Array<{ feature: string; title: string; desc: string; priority: string; price: string }> };
 }
 
 export default function CompaniesPage() {
