@@ -68,10 +68,15 @@ export async function PUT(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { id, ...updates } = body;
+  const { id, phone, isActive } = body;
+
+  // Whitelist: only allow phone and isActive updates (no role/orgId escalation)
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if (phone !== undefined) updates.phone = phone;
+  if (isActive !== undefined) updates.isActive = isActive;
 
   const [updated] = await db.update(users)
-    .set({ ...updates, updatedAt: new Date() })
+    .set(updates)
     .where(and(eq(users.id, id), eq(users.orgId, user.orgId)))
     .returning();
 
