@@ -6,6 +6,7 @@ interface DriverLocation {
   id: string; userId: string; lat: number; lng: number;
   speed?: number; batteryLevel?: number; isOnline: boolean;
   activeJobId?: string; driverFirstName: string; driverLastName: string;
+  timestamp?: string;
 }
 
 interface Job {
