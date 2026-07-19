@@ -387,3 +387,188 @@ export const impoundVehiclesRelations = relations(impoundVehicles, ({ one }) => 
   organization: one(organizations, { fields: [impoundVehicles.orgId], references: [organizations.id] }),
   job: one(jobs, { fields: [impoundVehicles.jobId], references: [jobs.id] }),
 }));
+
+// ========== DRIVER SCHEDULES & RATES ==========
+export const driverSchedules = pgTable("driver_schedules", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  driverId: uuid("driver_id").references(() => users.id).notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0=Sun, 6=Sat
+  startTime: text("start_time").notNull(), // "08:00"
+  endTime: text("end_time").notNull(), // "18:00"
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const driverRates = pgTable("driver_rates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  driverId: uuid("driver_id").references(() => users.id).notNull(),
+  rateType: text("rate_type").notNull(), // hourly, per_job, commission
+  dayRate: real("day_rate").default(0), // $/hr or % during day
+  nightRate: real("night_rate").default(0), // $/hr or % during night
+  nightStart: text("night_start").default("18:00"),
+  nightEnd: text("night_end").default("06:00"),
+  weekendRate: real("weekend_rate").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== SUBCONTRACTORS ==========
+export const subcontractors = pgTable("subcontractors", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  companyName: text("company_name").notNull(),
+  contactName: text("contact_name"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  mcNumber: text("mc_number"), // Motor carrier number
+  dotNumber: text("dot_number"),
+  insuranceExpiry: timestamp("insurance_expiry"),
+  ratePerMile: real("rate_per_mile"),
+  flatRate: real("flat_rate"),
+  commission: real("commission"), // % they take
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const subcontractorDrivers = pgTable("subcontractor_drivers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  subcontractorId: uuid("subcontractor_id").references(() => subcontractors.id).notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  phone: text("phone"),
+  email: text("email"),
+  licenseNumber: text("license_number"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const subcontractorVehicles = pgTable("subcontractor_vehicles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  subcontractorId: uuid("subcontractor_id").references(() => subcontractors.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  make: text("make"),
+  model: text("model"),
+  year: integer("year"),
+  licensePlate: text("license_plate"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ========== CONTRACTS (B2B / B2C) ==========
+export const contractTypeEnum = pgEnum("contract_type", ["b2b", "b2c"]);
+export const contractStatusEnum = pgEnum("contract_status", ["active", "expired", "terminated", "pending"]);
+
+export const contracts = pgTable("contracts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  customerId: uuid("customer_id").references(() => customers.id),
+  subcontractorId: uuid("subcontractor_id").references(() => subcontractors.id),
+  contractType: contractTypeEnum("contract_type").notNull(),
+  status: contractStatusEnum("status").default("active").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  terms: text("terms"), // contract terms summary
+  ratePerMile: real("rate_per_mile"),
+  flatRate: real("flat_rate"),
+  monthlyRetainer: real("monthly_retainer"),
+  commission: real("commission"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  renewalDate: timestamp("renewal_date"),
+  notifyDaysBefore: integer("notify_days_before").default(30),
+  isAutoRenew: boolean("is_auto_renew").default(false),
+  documentUrl: text("document_url"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== IMPOUND POLICE REPORTS ==========
+export const policeReports = pgTable("police_reports", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  impoundVehicleId: uuid("impound_vehicle_id").references(() => impoundVehicles.id).notNull(),
+  reportNumber: text("report_number"),
+  department: text("department"), // LAPD, CHP, etc.
+  officerName: text("officer_name"),
+  officerBadge: text("officer_badge"),
+  reasonForTow: text("reason_for_tow"), // accident, illegal_parking, abandoned, etc.
+  accidentReportNumber: text("accident_report_number"),
+  towReleaseNumber: text("tow_release_number"),
+  formFields: jsonb("form_fields").default({}), // pre-filled form data
+  status: text("status").default("draft"), // draft, sent, acknowledged
+  sentAt: timestamp("sent_at"),
+  sentMethod: text("sent_method"), // email, fax, portal
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== AUCTION LISTINGS ==========
+export const auctionListings = pgTable("auction_listings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  auctionDate: timestamp("auction_date"),
+  location: text("location"),
+  status: text("status").default("draft"), // draft, published, completed, cancelled
+  vehicleIds: jsonb("vehicle_ids").default([]), // array of impound_vehicle IDs
+  announcementUrl: text("announcement_url"), // generated PDF
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== NEW RELATIONS ==========
+export const driverSchedulesRelations = relations(driverSchedules, ({ one }) => ({
+  organization: one(organizations, { fields: [driverSchedules.orgId], references: [organizations.id] }),
+  driver: one(users, { fields: [driverSchedules.driverId], references: [users.id] }),
+}));
+
+export const driverRatesRelations = relations(driverRates, ({ one }) => ({
+  organization: one(organizations, { fields: [driverRates.orgId], references: [organizations.id] }),
+  driver: one(users, { fields: [driverRates.driverId], references: [users.id] }),
+}));
+
+export const subcontractorsRelations = relations(subcontractors, ({ one, many }) => ({
+  organization: one(organizations, { fields: [subcontractors.orgId], references: [organizations.id] }),
+  drivers: many(subcontractorDrivers),
+  vehicles: many(subcontractorVehicles),
+  contracts: many(contracts),
+}));
+
+export const subcontractorDriversRelations = relations(subcontractorDrivers, ({ one }) => ({
+  subcontractor: one(subcontractors, { fields: [subcontractorDrivers.subcontractorId], references: [subcontractors.id] }),
+}));
+
+export const subcontractorVehiclesRelations = relations(subcontractorVehicles, ({ one }) => ({
+  subcontractor: one(subcontractors, { fields: [subcontractorVehicles.subcontractorId], references: [subcontractors.id] }),
+}));
+
+export const contractsRelations = relations(contracts, ({ one }) => ({
+  organization: one(organizations, { fields: [contracts.orgId], references: [organizations.id] }),
+  customer: one(customers, { fields: [contracts.customerId], references: [customers.id] }),
+  subcontractor: one(subcontractors, { fields: [contracts.subcontractorId], references: [subcontractors.id] }),
+}));
+
+export const policeReportsRelations = relations(policeReports, ({ one }) => ({
+  organization: one(organizations, { fields: [policeReports.orgId], references: [organizations.id] }),
+  impoundVehicle: one(impoundVehicles, { fields: [policeReports.impoundVehicleId], references: [impoundVehicles.id] }),
+}));
+
+export const auctionListingsRelations = relations(auctionListings, ({ one }) => ({
+  organization: one(organizations, { fields: [auctionListings.orgId], references: [organizations.id] }),
+}));
