@@ -8,7 +8,7 @@ const DispatchMap = dynamic(() => import("@/components/DispatchMap"), { ssr: fal
 interface DriverLocation {
   id: string; userId: string; lat: number; lng: number;
   speed?: number; heading?: number; batteryLevel?: number;
-  isOnline: boolean; activeJobId?: string; timestamp: string;
+  isOnline: boolean; activeJobId?: string; timestamp?: string;
   driverFirstName: string; driverLastName: string;
 }
 
