@@ -87,7 +87,7 @@ export default function Home() {
               <button onClick={() => setShowWaitlist(true)} className="bg-[#533afd] text-white px-7 py-3 rounded font-medium text-[15px] hover:bg-[#4434d4] transition-all shadow-[0_4px_16px_rgba(83,58,253,0.3)] hover:shadow-[0_6px_24px_rgba(83,58,253,0.4)]">
                 Request early access
               </button>
-              <a href="#features" className="border border-[#e5edf5] text-[#061b31] px-7 py-3 rounded font-medium text-[15px] hover:border-[#b9b9f9] hover:bg-[#533afd]/[0.02] transition-all">
+              <a href="/features" className="border border-[#e5edf5] text-[#061b31] px-7 py-3 rounded font-medium text-[15px] hover:border-[#b9b9f9] hover:bg-[#533afd]/[0.02] transition-all">
                 See features →
               </a>
             </div>
