@@ -269,3 +269,121 @@ export const shiftsRelations = relations(shifts, ({ one }) => ({
   driver: one(users, { fields: [shifts.driverId], references: [users.id] }),
   vehicle: one(vehicles, { fields: [shifts.vehicleId], references: [vehicles.id] }),
 }));
+
+// ========== CUSTOMERS (CRM) ==========
+export const customers = pgTable("customers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"),
+  company: text("company"),
+  notes: text("notes"),
+  totalJobs: integer("total_jobs").default(0),
+  totalSpent: real("total_spent").default(0),
+  isVip: boolean("is_vip").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== INVOICES ==========
+export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "sent", "paid", "overdue", "cancelled"]);
+
+export const invoices = pgTable("invoices", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  jobId: uuid("job_id").references(() => jobs.id),
+  customerId: uuid("customer_id").references(() => customers.id),
+  invoiceNumber: text("invoice_number").notNull(),
+  status: invoiceStatusEnum("status").default("draft").notNull(),
+  subtotal: real("subtotal").notNull(),
+  tax: real("tax").default(0),
+  discount: real("discount").default(0),
+  total: real("total").notNull(),
+  paidAmount: real("paid_amount").default(0),
+  paymentMethod: text("payment_method"),
+  notes: text("notes"),
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== RATE SHEETS ==========
+export const rateSheets = pgTable("rate_sheets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(true),
+  rates: jsonb("rates").default([]), // [{service: "light_duty", base: 75, perMile: 3.50, minCharge: 50}]
+  afterHoursMultiplier: real("after_hours_multiplier").default(1.5),
+  weekendMultiplier: real("weekend_multiplier").default(1.25),
+  holidayMultiplier: real("holiday_multiplier").default(2.0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== JOB PHOTOS ==========
+export const jobPhotos = pgTable("job_photos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  jobId: uuid("job_id").references(() => jobs.id).notNull(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  url: text("url").notNull(),
+  caption: text("caption"),
+  type: text("type").default("general"), // general, damage, pickup, dropoff, odometer, signature
+  uploadedBy: uuid("uploaded_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ========== IMPOUND LOT ==========
+export const impoundVehicles = pgTable("impound_vehicles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  jobId: uuid("job_id").references(() => jobs.id),
+  vehicleMake: text("vehicle_make"),
+  vehicleModel: text("vehicle_model"),
+  vehicleYear: integer("vehicle_year"),
+  vehicleColor: text("vehicle_color"),
+  vehiclePlate: text("vehicle_plate"),
+  vehicleVin: text("vehicle_vin"),
+  ownerName: text("owner_name"),
+  ownerPhone: text("owner_phone"),
+  lotLocation: text("lot_location"),
+  lotSpot: text("lot_spot"),
+  dailyRate: real("daily_rate").default(25),
+  status: text("status").default("stored"), // stored, released, auctioned, disposed
+  storedAt: timestamp("stored_at").defaultNow().notNull(),
+  releasedAt: timestamp("released_at"),
+  releaseAuth: text("release_auth"),
+  totalCharges: real("total_charges").default(0),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ========== NEW RELATIONS ==========
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  organization: one(organizations, { fields: [customers.orgId], references: [organizations.id] }),
+  invoices: many(invoices),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  organization: one(organizations, { fields: [invoices.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [invoices.jobId], references: [jobs.id] }),
+  customer: one(customers, { fields: [invoices.customerId], references: [customers.id] }),
+}));
+
+export const jobPhotosRelations = relations(jobPhotos, ({ one }) => ({
+  job: one(jobs, { fields: [jobPhotos.jobId], references: [jobs.id] }),
+  organization: one(organizations, { fields: [jobPhotos.orgId], references: [organizations.id] }),
+}));
+
+export const impoundVehiclesRelations = relations(impoundVehicles, ({ one }) => ({
+  organization: one(organizations, { fields: [impoundVehicles.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [impoundVehicles.jobId], references: [jobs.id] }),
+}));
