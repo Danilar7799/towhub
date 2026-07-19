@@ -1,6 +1,5 @@
-@import "tailwindcss";
-
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
 
 :root {
   --color-bg: #ffffff;
@@ -26,24 +25,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Stripe-style shadows */
-.shadow-stripe {
-  box-shadow: 0 50px 100px -20px rgba(50,50,93,0.25), 0 30px 60px -30px rgba(0,0,0,0.1);
-}
-
-.shadow-stripe-sm {
-  box-shadow: 0 15px 35px rgba(50,50,93,0.08);
-}
-
-/* Smooth scrolling */
 html { scroll-behavior: smooth; }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f6f9fc; }
 ::-webkit-scrollbar-thumb { background: #c5cdd8; border-radius: 3px; }
 
-/* Focus ring */
 :focus-visible {
   outline: 2px solid #533afd;
   outline-offset: 2px;
