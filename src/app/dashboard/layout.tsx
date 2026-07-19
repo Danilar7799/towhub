@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/reports", icon: "bar-chart", label: "Reports" },
   { href: "/dashboard/impound", icon: "archive", label: "Impound" },
   { href: "/dashboard/rates", icon: "tag", label: "Rates" },
+  { href: "/dashboard/billing", icon: "credit-card", label: "Billing" },
   { href: "/dashboard/settings", icon: "settings", label: "Settings" },
 ];
 
