@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useToast } from "@/lib/toast";
 
 export default function SettingsPage() {
+  const toast = useToast();
   const [org, setOrg] = useState<{ name: string; phone?: string; email: string } | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState("");
   const [appUrl, setAppUrl] = useState("");
+  const [blandPhone, setBlandPhone] = useState("");
+  const [twilioPhone, setTwilioPhone] = useState("");
+  const [googleBusinessUrl, setGoogleBusinessUrl] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => setOrg(d.org));
@@ -175,18 +181,34 @@ export default function SettingsPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Bland.ai Phone Number</label>
-            <input placeholder="+1-555-000-0000" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
+            <input value={blandPhone} onChange={e => setBlandPhone(e.target.value)} placeholder="+1-555-000-0000" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
           </div>
           <div>
             <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Twilio Phone Number</label>
-            <input placeholder="+1-555-000-0000" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
+            <input value={twilioPhone} onChange={e => setTwilioPhone(e.target.value)} placeholder="+1-555-000-0000" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
           </div>
           <div>
             <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Google Business Chat URL</label>
-            <input placeholder="https://maps.google.com/..." className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
+            <input value={googleBusinessUrl} onChange={e => setGoogleBusinessUrl(e.target.value)} placeholder="https://maps.google.com/..." className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] focus:ring-1 focus:ring-[#533afd]/20 outline-none" />
           </div>
-          <button className="bg-[#533afd] text-white px-5 py-2.5 rounded text-[13px] font-medium hover:bg-[#4434d4] transition-colors shadow-[0_2px_8px_rgba(83,58,253,0.2)]">
-            Save Settings
+          <button disabled={saving} onClick={async () => {
+            setSaving(true);
+            try {
+              const res = await fetch("/api/auth/me");
+              const data = await res.json();
+              if (data.org?.id) {
+                const putRes = await fetch("/api/auth/me", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ blandPhoneNumber: blandPhone, twilioPhoneNumber: twilioPhone, googleBusinessUrl }),
+                });
+                if (putRes.ok) toast.success("Settings saved successfully!");
+                else toast.error("Failed to save settings");
+              }
+            } catch { toast.error("Network error"); }
+            finally { setSaving(false); }
+          }} className="bg-[#533afd] text-white px-5 py-2.5 rounded text-[13px] font-medium hover:bg-[#4434d4] transition-colors shadow-[0_2px_8px_rgba(83,58,253,0.2)] disabled:opacity-50">
+            {saving ? "Saving..." : "Save Settings"}
           </button>
         </div>
       </div>
