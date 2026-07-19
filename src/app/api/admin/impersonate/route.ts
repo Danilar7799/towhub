@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, signToken } from "@/lib/auth";
 import { db } from "@/db";
 import { users, organizations } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // POST - Super admin impersonates a user/org
 export async function POST(req: NextRequest) {
@@ -34,5 +34,3 @@ export async function POST(req: NextRequest) {
 
   return res;
 }
-
-import { and } from "drizzle-orm";

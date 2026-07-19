@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
   const { jobId, action, reason, reviewUrl } = await req.json();
   if (!jobId || !action) return NextResponse.json({ error: "jobId and action required" }, { status: 400 });
 
-  const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.orgId, user.orgId))).limit(1);
+  if (!user.orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const orgId = user.orgId;
+  const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.orgId, orgId))).limit(1);
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
   const now = new Date();

@@ -38,6 +38,11 @@ export async function POST(req: NextRequest) {
 // GET - List all waitlist entries (admin only)
 export async function GET() {
   try {
+    const { getCurrentUser } = await import("@/lib/auth");
+    const user = await getCurrentUser();
+    if (!user || user.role !== "super_admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const entries = await db.select().from(waitlist).orderBy(waitlist.createdAt);
     return NextResponse.json({ entries });
   } catch (err) {

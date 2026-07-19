@@ -76,9 +76,28 @@ export async function PUT(req: NextRequest) {
   if (!user || !user.orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { id, ...updates } = body;
+  const { id, status, notes, dispatcherNotes, assignedDriverId, assignedVehicleId,
+    customerName, customerPhone, customerEmail, isPaid, paymentMethod,
+    baseRate, mileageRate, totalAmount, actualMiles } = body;
 
   if (!id) return NextResponse.json({ error: "Job ID required" }, { status: 400 });
+
+  // Whitelist: only allow safe fields (no orgId, no createdAt manipulation)
+  const updates: Record<string, unknown> = {};
+  if (status !== undefined) updates.status = status;
+  if (notes !== undefined) updates.notes = notes;
+  if (dispatcherNotes !== undefined) updates.dispatcherNotes = dispatcherNotes;
+  if (assignedDriverId !== undefined) updates.assignedDriverId = assignedDriverId;
+  if (assignedVehicleId !== undefined) updates.assignedVehicleId = assignedVehicleId;
+  if (customerName !== undefined) updates.customerName = customerName;
+  if (customerPhone !== undefined) updates.customerPhone = customerPhone;
+  if (customerEmail !== undefined) updates.customerEmail = customerEmail;
+  if (isPaid !== undefined) updates.isPaid = isPaid;
+  if (paymentMethod !== undefined) updates.paymentMethod = paymentMethod;
+  if (baseRate !== undefined) updates.baseRate = baseRate;
+  if (mileageRate !== undefined) updates.mileageRate = mileageRate;
+  if (totalAmount !== undefined) updates.totalAmount = totalAmount;
+  if (actualMiles !== undefined) updates.actualMiles = actualMiles;
 
   // Auto-set timestamps based on status
   const now = new Date();
