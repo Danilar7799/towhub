@@ -4,8 +4,17 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "TowHub — Smart Towing Management Platform",
-  description: "AI-powered dispatching, fleet tracking, lead management, and more for towing companies.",
+  description: "AI-powered dispatching, fleet tracking, lead management, and more for towing companies. Manage dispatch, track drivers, capture leads, and grow your towing business.",
   manifest: "/manifest.json",
+  keywords: ["towing", "dispatch", "fleet management", "roadside assistance", "tow truck", "GPS tracking", "CRM"],
+  authors: [{ name: "TowHub" }],
+  openGraph: {
+    title: "TowHub — The Operating System for Towing Businesses",
+    description: "AI-powered dispatching, fleet tracking, lead management, and more for towing companies.",
+    url: "https://towhub.vercel.app",
+    siteName: "TowHub",
+    type: "website",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
