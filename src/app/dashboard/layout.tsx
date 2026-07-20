@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/kpi", icon: "trophy", label: "Driver KPI", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/customers", icon: "user", label: "Customers", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/fleet", icon: "truck", label: "Fleet", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/maintenance", icon: "settings", label: "Maintenance", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/drivers", icon: "users", label: "Team", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/contracts", icon: "file-text", label: "Contracts", roles: ["super_admin", "owner", "admin"] as UserRole[] },
