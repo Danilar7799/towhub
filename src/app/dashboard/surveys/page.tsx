@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend,
@@ -189,7 +189,7 @@ export default function CustomerSurveysPage() {
               <div className="text-[13px] font-medium mb-4">NPS Breakdown</div>
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={npsData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value" label={({ name, value }) => `${value}`}>
+                  <Pie data={npsData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value" label={({ value }) => `${value}`}>
                     {npsData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                   </Pie>
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5edf5" }} />

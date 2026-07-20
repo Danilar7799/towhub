@@ -131,7 +131,7 @@ export default function PricingEnginePage() {
   const [previewWeather, setPreviewWeather] = useState<string>("none");
   const [previewDemand, setPreviewDemand] = useState(5);
 
-  const activeSheet = sheets.find(s => s.id === activeSheetId)!;
+  const activeSheet = useMemo(() => sheets.find(s => s.id === activeSheetId)!, [sheets, activeSheetId]);
 
   /* ─── helpers ─── */
   const updateSheet = (patch: Partial<RateSheet>) =>
