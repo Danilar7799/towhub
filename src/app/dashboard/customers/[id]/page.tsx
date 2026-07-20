@@ -57,6 +57,7 @@ interface Invoice {
   paidAt?: string;
   createdAt: string;
   jobId?: string;
+  customerId?: string;
   customerName?: string;
 }
 
@@ -170,10 +171,14 @@ export default function CustomerDetailPage() {
     setLoading(true);
     setError("");
     try {
-      const custRes = await fetch(`/api/customers?id=${id}`);
-      if (!custRes.ok) throw new Error("Failed to load customer");
-      const custData = await custRes.json();
-      const found: Customer | undefined = (custData.customers || []).find((c: Customer) => c.id === id);
+      /* Fetch all data in parallel, then filter client-side */
+      const [custRes, jobsRes, invRes] = await Promise.all([
+        fetch("/api/customers").then((r) => (r.ok ? r.json() : { customers: [] })),
+        fetch("/api/jobs").then((r) => (r.ok ? r.json() : { jobs: [] })),
+        fetch("/api/invoices").then((r) => (r.ok ? r.json() : { invoices: [] })),
+      ]);
+
+      const found: Customer | undefined = (custRes.customers || []).find((c: Customer) => c.id === id);
       if (!found) {
         setError("Customer not found");
         setLoading(false);
@@ -182,14 +187,16 @@ export default function CustomerDetailPage() {
       setCustomer(found);
       setNotes(found.notes || "");
 
-      /* Fetch jobs by customer name */
-      const [jobsRes, invRes] = await Promise.all([
-        fetch(`/api/jobs?customerName=${encodeURIComponent(found.name)}`).then((r) => (r.ok ? r.json() : { jobs: [] })),
-        fetch(`/api/invoices?customerId=${found.id}`).then((r) => (r.ok ? r.json() : { invoices: [] })),
-      ]);
+      /* Filter jobs by customer name, invoices by customerId */
+      const customerJobs = (jobsRes.jobs || []).filter(
+        (j: Job) => j.customerName && found.name && j.customerName.toLowerCase() === found.name.toLowerCase()
+      );
+      const customerInvoices = (invRes.invoices || []).filter(
+        (inv: Invoice) => inv.customerId === found.id || (inv.customerName && inv.customerName.toLowerCase() === found.name.toLowerCase())
+      );
 
-      setJobs(jobsRes.jobs || []);
-      setInvoices(invRes.invoices || []);
+      setJobs(customerJobs);
+      setInvoices(customerInvoices);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

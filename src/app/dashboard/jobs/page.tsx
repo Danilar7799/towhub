@@ -183,6 +183,17 @@ export default function JobsPage() {
               </div>
             )}
 
+            {/* Auto-Assign */}
+            {selectedJob.status === "pending" && (
+              <button onClick={async () => {
+                const res = await fetch("/api/dispatch/auto-assign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId: selectedJob.id }) });
+                const data = await res.json();
+                if (data.ok) { load(); setSelectedJob(null); }
+              }} className="w-full py-2.5 bg-[#533afd] text-white rounded text-[13px] font-medium hover:bg-[#4434d4] transition-colors">
+                🤖 Auto-Assign Nearest Driver
+              </button>
+            )}
+
             {/* Pricing */}
             <div>
               <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Pricing</div>

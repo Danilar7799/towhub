@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Customer { id: string; name: string; email?: string; phone?: string; company?: string; city?: string; totalJobs: number; totalSpent: number; isVip: boolean; createdAt: string; }
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState("");
@@ -51,7 +53,7 @@ export default function CustomersPage() {
             </thead>
             <tbody className="divide-y divide-[#e5edf5]">
               {customers.map(c => (
-                <tr key={c.id} className="hover:bg-[#f6f9fc]">
+                <tr key={c.id} className="hover:bg-[#f6f9fc] cursor-pointer" onClick={() => router.push(`/dashboard/customers/${c.id}`)}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-[14px] font-medium">{c.name}</span>
@@ -62,7 +64,7 @@ export default function CustomersPage() {
                   <td className="px-5 py-3 text-[13px] text-[#64748d]">{c.company || "—"}</td>
                   <td className="px-5 py-3 text-[14px]">{c.totalJobs}</td>
                   <td className="px-5 py-3 text-[14px] font-medium">${(c.totalSpent || 0).toFixed(0)}</td>
-                  <td className="px-5 py-3 text-right"><button onClick={() => toggleVip(c)} className="text-[12px] text-[#533afd]">{c.isVip ? "Remove VIP" : "Mark VIP"}</button></td>
+                  <td className="px-5 py-3 text-right"><button onClick={(e) => { e.stopPropagation(); toggleVip(c); }} className="text-[12px] text-[#533afd]">{c.isVip ? "Remove VIP" : "Mark VIP"}</button></td>
                 </tr>
               ))}
             </tbody>

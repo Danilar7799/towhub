@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 /* ───────── Types ───────── */
@@ -22,12 +22,11 @@ interface RecentSearch {
 
 const ENTITY_CONFIG: Record<
   SearchResult["type"],
-  { label: string; icon: React.ReactNode; color: string; bgColor: string }
+  { label: string; icon: React.ReactNode; color: string }
 > = {
   job: {
     label: "Jobs",
     color: "#533afd",
-    bgColor: "#533afd/8",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="3" width="20" height="18" rx="2" />
@@ -40,7 +39,6 @@ const ENTITY_CONFIG: Record<
   customer: {
     label: "Customers",
     color: "#0ea5e9",
-    bgColor: "#0ea5e9/8",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -51,7 +49,6 @@ const ENTITY_CONFIG: Record<
   invoice: {
     label: "Invoices",
     color: "#10b981",
-    bgColor: "#10b981/8",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -64,7 +61,6 @@ const ENTITY_CONFIG: Record<
   fleet: {
     label: "Fleet",
     color: "#f59e0b",
-    bgColor: "#f59e0b/8",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="1" y="3" width="15" height="13" rx="1" />
@@ -77,7 +73,6 @@ const ENTITY_CONFIG: Record<
   driver: {
     label: "Drivers",
     color: "#8b5cf6",
-    bgColor: "#8b5cf6/8",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -116,10 +111,6 @@ function clearRecentSearches() {
   localStorage.removeItem(RECENT_SEARCHES_KEY);
 }
 
-function matchesQuery(text: string, query: string): boolean {
-  return text.toLowerCase().includes(query.toLowerCase());
-}
-
 /* ───────── Component ───────── */
 
 interface GlobalSearchProps {
@@ -131,22 +122,21 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
-  const abortRef = useRef<AbortController | null>(null);
+  // Read recent searches directly from localStorage when overlay is open
+  // (avoids setState-in-effect lint; localStorage is synchronous and idempotent)
+  const recentSearchesList = open ? getRecentSearches() : recentSearches;
 
-  // Load recent searches on open
+  // Focus input when opening (effect is fine — imperative side-effect on DOM)
   useEffect(() => {
     if (open) {
-      setRecentSearches(getRecentSearches());
-      setQuery("");
-      setResults([]);
-      setActiveIndex(-1);
-      // Focus input after mount
-      requestAnimationFrame(() => inputRef.current?.focus());
+      inputRef.current?.focus();
     }
   }, [open]);
 
@@ -163,56 +153,61 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
-  // Debounced search
+  // Debounced search — always runs, handles empty query cleanup via the timer
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setActiveIndex(-1);
-      return;
-    }
+    const trimmed = query.trim();
 
     const timer = setTimeout(async () => {
-      // Abort previous request
+      if (!trimmed) {
+        setResults([]);
+        setActiveIndex(-1);
+        setLoading(false);
+        return;
+      }
+
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
       setLoading(true);
       try {
-        const fetched = await searchAll(query, controller.signal);
+        const fetched = await searchAll(trimmed, controller.signal);
         if (!controller.signal.aborted) {
           setResults(fetched);
           setActiveIndex(fetched.length > 0 ? 0 : -1);
         }
       } catch {
-        // Silently ignore aborts
+        // Ignore aborts
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }, 250);
 
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Flatten results for keyboard nav
-  const allItems = useMemo(() => results, [results]);
+  // Navigate to a result
+  function navigateTo(result: SearchResult) {
+    saveRecentSearch(query);
+    router.push(result.href);
+    onClose();
+  }
 
   // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setActiveIndex((prev) => (prev < allItems.length - 1 ? prev + 1 : 0));
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setActiveIndex((prev) => (prev > 0 ? prev - 1 : allItems.length - 1));
-      } else if (e.key === "Enter" && activeIndex >= 0 && allItems[activeIndex]) {
-        e.preventDefault();
-        navigateTo(allItems[activeIndex]);
-      }
-    },
-    [allItems, activeIndex]
-  );
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === "Enter" && activeIndex >= 0 && results[activeIndex]) {
+      e.preventDefault();
+      navigateTo(results[activeIndex]);
+    }
+  }
 
   // Scroll active item into view
   useEffect(() => {
@@ -221,16 +216,6 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
       activeEl?.scrollIntoView({ block: "nearest" });
     }
   }, [activeIndex]);
-
-  const navigateTo = (result: SearchResult) => {
-    saveRecentSearch(query);
-    router.push(result.href);
-    onClose();
-  };
-
-  const navigateToRecent = (recentQuery: string) => {
-    setQuery(recentQuery);
-  };
 
   // Group results by type
   const grouped = useMemo(() => {
@@ -291,7 +276,7 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           {/* Empty state — show recent or hint */}
           {!query.trim() && (
             <div className="py-6 px-4">
-              {recentSearches.length > 0 ? (
+              {recentSearchesList.length > 0 ? (
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[11px] font-semibold text-[#64748d] uppercase tracking-wider">
@@ -308,10 +293,10 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {recentSearches.map((rs) => (
+                    {recentSearchesList.map((rs) => (
                       <button
                         key={rs.query}
-                        onClick={() => navigateToRecent(rs.query)}
+                        onClick={() => setQuery(rs.query)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] text-[#64748d] bg-[#f6f9fc] border border-[#e5edf5] rounded-lg hover:border-[#533afd]/30 hover:text-[#533afd] transition-colors"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -460,29 +445,25 @@ export function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 /* ───────── Search logic ───────── */
 
 async function searchAll(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
-  const q = query.toLowerCase().trim();
-  const results: SearchResult[] = [];
-
-  // Fetch all entity types in parallel
   const fetches = [
-    fetchEntity<Record<string, unknown>>("/api/jobs", q, "job", signal),
-    fetchEntity<Record<string, unknown>>("/api/customers", q, "customer", signal),
-    fetchEntity<Record<string, unknown>>("/api/invoices", q, "invoice", signal),
-    fetchEntity<Record<string, unknown>>("/api/fleet", q, "fleet", signal),
-    fetchEntity<Record<string, unknown>>("/api/drivers", q, "driver", signal),
+    fetchEntity("/api/jobs", query, "job", signal),
+    fetchEntity("/api/customers", query, "customer", signal),
+    fetchEntity("/api/invoices", query, "invoice", signal),
+    fetchEntity("/api/fleet", query, "fleet", signal),
+    fetchEntity("/api/drivers", query, "driver", signal),
   ];
 
   const settled = await Promise.allSettled(fetches);
+  const results: SearchResult[] = [];
   for (const s of settled) {
     if (s.status === "fulfilled") {
       results.push(...s.value);
     }
   }
-
   return results;
 }
 
-async function fetchEntity<T extends Record<string, unknown>>(
+async function fetchEntity(
   url: string,
   query: string,
   type: SearchResult["type"],
@@ -492,23 +473,19 @@ async function fetchEntity<T extends Record<string, unknown>>(
   if (!res.ok) return [];
 
   const json = await res.json();
-  // Handle both { jobs: [...] } and { data: [...] } and raw array formats
-  const items: T[] = Array.isArray(json)
+  const items: Record<string, unknown>[] = Array.isArray(json)
     ? json
     : json.jobs || json.customers || json.invoices || json.fleet || json.drivers || json.data || json.items || [];
 
   return items
     .filter((item) => matchItem(item, query, type))
-    .slice(0, 10) // Max 10 per type
+    .slice(0, 10)
     .map((item) => mapToResult(item, type));
 }
 
 function matchItem(item: Record<string, unknown>, query: string, type: SearchResult["type"]): boolean {
   const searchable = getSearchableFields(item, type);
-  return searchable.some((field) => {
-    const val = String(field || "").toLowerCase();
-    return val.includes(query);
-  });
+  return searchable.some((field) => String(field || "").toLowerCase().includes(query));
 }
 
 function getSearchableFields(item: Record<string, unknown>, type: SearchResult["type"]): string[] {
@@ -554,8 +531,7 @@ function mapToResult(item: Record<string, unknown>, type: SearchResult["type"]):
       const customer = item.customerName || item.customer || "";
       const status = item.status || "";
       const subtitle = [customer ? `Customer: ${customer}` : "", status ? `Status: ${status}` : ""]
-        .filter(Boolean)
-        .join(" · ") || "Tow job";
+        .filter(Boolean).join(" · ") || "Tow job";
       return { id: String(jobId), type, title, subtitle, href: `/dashboard/jobs?id=${jobId}` };
     }
     case "customer": {
@@ -608,7 +584,6 @@ export function useGlobalSearch() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);

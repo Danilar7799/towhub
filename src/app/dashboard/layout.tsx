@@ -260,6 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     </div>
+    <GlobalSearch open={searchOpen} onClose={closeSearch} />
     </NotificationProvider>
   );
 }
