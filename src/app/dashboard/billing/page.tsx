@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/lib/toast";
 
 interface Plan {
   name: string; price: number | null; commission: number; maxDrivers: number; features: string[];
 }
 
 export default function BillingPage() {
+  const toast = useToast();
   const [plans, setPlans] = useState<Record<string, Plan>>({});
   const [currentPlan, setCurrentPlan] = useState("starter");
 
@@ -25,7 +27,7 @@ export default function BillingPage() {
     if (data.checkoutUrl) {
       window.location.href = data.checkoutUrl;
     } else {
-      alert(data.message);
+      toast.info(data.message || "Done");
     }
   };
 

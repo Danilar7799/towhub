@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useToast } from "@/lib/toast";
 
 interface TeamUser {
   id: string; email: string; firstName: string; lastName: string;
@@ -15,6 +16,7 @@ const ROLE_STYLES: Record<string, { bg: string; text: string; border: string }> 
 };
 
 export default function DriversPage() {
+  const toast = useToast();
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ email: "", firstName: "", lastName: "", phone: "", role: "driver", password: "" });
@@ -27,7 +29,7 @@ export default function DriversPage() {
     const res = await fetch("/api/drivers", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (res.ok) {
       const data = await res.json();
-      alert(`Driver added!\nEmail: ${data.credentials.email}\nPassword: ${data.credentials.password}`);
+      toast.success(`Driver added: ${data.credentials.email}`);
       setShowAdd(false);
       setForm({ email: "", firstName: "", lastName: "", phone: "", role: "driver", password: "" });
       load();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useToast } from "@/lib/toast";
 
 interface ImpoundVehicle {
   id: string; vehicleMake?: string; vehicleModel?: string; vehicleYear?: number; vehicleColor?: string;
@@ -11,6 +12,7 @@ interface PoliceReport { id: string; impoundVehicleId: string; reportNumber?: st
 interface AuctionListing { id: string; title: string; auctionDate?: string; status: string; vehicleIds: string[]; }
 
 export default function ImpoundPage() {
+  const toast = useToast();
   const [vehicles, setVehicles] = useState<ImpoundVehicle[]>([]);
   const [reports, setReports] = useState<PoliceReport[]>([]);
   const [auctions, setAuctions] = useState<AuctionListing[]>([]);
@@ -57,11 +59,11 @@ export default function ImpoundPage() {
   const sendReport = async (id: string, method: string) => {
     await fetch("/api/impound/police-reports", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status: "sent", sentMethod: method }) });
     loadReports();
-    alert(`Report sent via ${method}!`);
+     toast.success(`Report sent via ${method}!`);
   };
 
   const createAuction = async () => {
-    if (eligible.length === 0) return alert("No eligible vehicles");
+    if (eligible.length === 0) return toast.error("No eligible vehicles for auction");
     await fetch("/api/impound/auction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
       title: `Auction ${new Date().toLocaleDateString()}`,
       description: `${eligible.length} vehicles stored over ${auctionDays} days`,
