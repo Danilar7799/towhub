@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { NotificationProvider } from "@/lib/notifications";
+import { NotificationBell } from "@/components/notification-bell";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "grid", label: "Overview" },
@@ -94,6 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+    <NotificationProvider>
     <div className="min-h-screen bg-[#f6f9fc] flex" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-[220px] bg-white border-r border-[#e5edf5] flex flex-col transform transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
@@ -188,10 +191,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             )}
             {/* Notifications */}
-            <button className="relative text-[#64748d] hover:text-[#061b31] p-1.5 transition-colors" title="Notifications">
-              <Icon name="bell" size={16} />
-              <div className="absolute top-1 right-1 w-2 h-2 bg-[#ea2261] rounded-full" />
-            </button>
+            <NotificationBell />
             {/* Dispatch link */}
             <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block ml-2">
               Dispatch →
@@ -199,11 +199,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
+        {/* Quick Tabs */}
+        <div className="border-b border-[#e5edf5] bg-white px-6">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {[
+              { href: "/dashboard", label: "Overview" },
+              { href: "/dashboard/jobs", label: "Jobs" },
+              { href: "/dashboard/dispatch", label: "Dispatch" },
+              { href: "/dashboard/customers", label: "Customers" },
+              { href: "/dashboard/leads", label: "Leads" },
+              { href: "/dashboard/fleet", label: "Fleet" },
+              { href: "/dashboard/invoices", label: "Invoices" },
+              { href: "/dashboard/reports", label: "Reports" },
+              { href: "/dashboard/auctions", label: "Auctions" },
+              { href: "/dashboard/settings", label: "Settings" },
+            ].map(tab => {
+              const active = pathname === tab.href;
+              return (
+                <Link key={tab.href} href={tab.href}
+                  className={`px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    active
+                      ? "border-[#533afd] text-[#533afd]"
+                      : "border-transparent text-[#64748d] hover:text-[#061b31] hover:border-[#e5edf5]"
+                  }`}>
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Content */}
         <main className="p-6">
           {children}
         </main>
       </div>
     </div>
+    </NotificationProvider>
   );
 }

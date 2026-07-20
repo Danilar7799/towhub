@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, leads } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { notifyOrg } from "@/lib/notify";
 
 /*
  * Public API — bolt.new websites (or any external form) POST leads here.
@@ -82,6 +83,9 @@ export async function POST(req: NextRequest) {
         destinationAddress: destination || null,
       })
       .returning();
+
+    // Notify all org members about the new lead
+    await notifyOrg(org.id, "lead", `New lead from ${source || "website"}`, `${name || "Unknown"} — ${phone || email || "no contact"}`, "/dashboard/leads");
 
     return NextResponse.json(
       { success: true, leadId: lead.id, message: "Lead received" },

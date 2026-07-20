@@ -613,3 +613,23 @@ export const ratingsRelations = relations(ratings, ({ one }) => ({
   customer: one(customers, { fields: [ratings.customerId], references: [customers.id] }),
   driver: one(users, { fields: [ratings.driverId], references: [users.id] }),
 }));
+
+// ========== NOTIFICATIONS ==========
+export const notificationTypeEnum = pgEnum("notification_type", ["lead", "job", "payment", "system"]);
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  orgId: uuid("org_id").references(() => organizations.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message"),
+  link: text("link"),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [notifications.orgId], references: [organizations.id] }),
+}));
