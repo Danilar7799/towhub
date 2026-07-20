@@ -9,9 +9,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
   return outputArray;
 }
 
@@ -21,72 +19,46 @@ export function PushNotificationPrompt() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setStatus("unsupported");
-      return;
-    }
-
-    // Check if already subscribed
+    if (sessionStorage.getItem("push_prompt_dismissed")) { setDismissed(true); return; }
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) { setStatus("unsupported"); return; }
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
     navigator.serviceWorker.ready.then(reg => {
       reg.pushManager.getSubscription().then(sub => {
-        if (sub) {
-          setStatus("subscribed");
-        } else if (Notification.permission === "denied") {
-          setStatus("blocked");
-        } else {
-          setStatus("supported");
-        }
+        if (sub) setStatus("subscribed");
+        else if (Notification.permission === "denied") setStatus("blocked");
+        else setStatus("supported");
       });
     }).catch(() => setStatus("supported"));
-
-    // Register service worker
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
   }, []);
 
   const subscribe = async () => {
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        setStatus("blocked");
-        return;
-      }
-
+      if (permission !== "granted") { setStatus("blocked"); return; }
       const reg = await navigator.serviceWorker.ready;
       const subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource,
       });
-
-      // Send subscription to server
-      await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: subscription.toJSON() }),
-      });
-
+      await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscription: subscription.toJSON() }) });
       setStatus("subscribed");
-    } catch (e) {
-      console.error("Push subscription failed:", e);
-    }
+    } catch (e) { console.error("Push failed:", e); }
   };
+
+  const dismiss = () => { setDismissed(true); sessionStorage.setItem("push_prompt_dismissed", "1"); };
 
   if (dismissed || status === "subscribed" || status === "unsupported" || status === "blocked") return null;
 
   return (
-    <div className="bg-[#533afd]/[0.04] border border-[#533afd]/10 rounded-lg p-4 flex items-center gap-3">
-      <div className="w-10 h-10 bg-[#533afd]/10 rounded-full flex items-center justify-center text-[18px]">🔔</div>
-      <div className="flex-1">
-        <div className="text-[13px] font-medium text-[#061b31]">Enable Push Notifications</div>
-        <div className="text-[11px] text-[#64748d]">Get notified about new leads and jobs even when the tab is closed</div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button onClick={subscribe} className="bg-[#533afd] text-white px-3 py-1.5 rounded text-[12px] font-medium hover:bg-[#4434d4]">
-          Enable
-        </button>
-        <button onClick={() => setDismissed(true)} className="text-[#64748d] text-[12px] hover:text-[#061b31]">
-          Later
-        </button>
-      </div>
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#533afd]/[0.04] border border-[#533afd]/10 text-[12px]">
+      <span className="text-[14px]">🔔</span>
+      <span className="text-[#64748d]">Get notified about new leads &amp; jobs</span>
+      <button onClick={subscribe} className="ml-auto px-2.5 py-1 bg-[#533afd] text-white rounded text-[11px] font-medium hover:bg-[#4434d4] transition-colors">
+        Enable
+      </button>
+      <button onClick={dismiss} className="text-[#94a3b8] hover:text-[#64748d] p-0.5">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
     </div>
   );
 }
