@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { LoadingPage } from "@/components/skeleton";
 import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { NewsSidebar } from "@/components/news-sidebar";
+import { SidebarAd } from "@/components/ads";
 
 export default function DashboardOverview() {
   const [stats, setStats] = useState({ activeJobs: 0, todayJobs: 0, activeDrivers: 0, todayRevenue: 0, pendingLeads: 0, totalVehicles: 0 });
@@ -52,7 +54,9 @@ export default function DashboardOverview() {
   };
 
   return (
-    <div className="space-y-5" style={{ fontFeatureSettings: "'ss01'" }}>
+    <div className="flex gap-5" style={{ fontFeatureSettings: "'ss01'" }}>
+      {/* Main content */}
+      <div className="flex-1 space-y-5 min-w-0">
       {/* Welcome */}
       <div className="bg-white border border-[#e5edf5] rounded-lg p-5 flex items-center justify-between">
         <div>
@@ -162,6 +166,13 @@ export default function DashboardOverview() {
             ))}
           </div>
         )}
+      </div>
+      </div>
+
+      {/* Right sidebar — News + Ads */}
+      <div className="w-[280px] shrink-0 space-y-4 hidden lg:block">
+        <NewsSidebar />
+        <SidebarAd />
       </div>
     </div>
   );

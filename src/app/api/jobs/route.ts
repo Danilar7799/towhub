@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { jobs } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { autoCreateInvoice } from "@/lib/auto-invoice";
 
 // GET - List jobs for org
 export async function GET(req: NextRequest) {
@@ -112,6 +113,16 @@ export async function PUT(req: NextRequest) {
     .set({ ...updates, updatedAt: now })
     .where(and(eq(jobs.id, id), eq(jobs.orgId, user.orgId)))
     .returning();
+
+  // Auto-create invoice when job is completed
+  if (updates.status === "completed" && updated) {
+    try {
+      await autoCreateInvoice(user.orgId, updated.id);
+    } catch (err) {
+      console.error("Failed to auto-create invoice:", err);
+      // Don't fail the job update if invoice creation fails
+    }
+  }
 
   return NextResponse.json({ job: updated });
 }

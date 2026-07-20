@@ -34,6 +34,18 @@ export default function InvoicesPage() {
     load();
   };
 
+  const sendPaymentLink = async (id: string) => {
+    try {
+      const res = await fetch("/api/payments/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invoiceId: id }) });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.open(data.checkoutUrl, "_blank");
+      } else {
+        alert(data.message || "Payment link not available");
+      }
+    } catch { alert("Error creating payment link"); }
+  };
+
   return (
     <div className="space-y-5" style={{ fontFeatureSettings: "'ss01'" }}>
       <div className="flex items-center justify-between">
@@ -68,7 +80,12 @@ export default function InvoicesPage() {
                   <td className="px-5 py-3"><span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${STATUS_STYLES[inv.status]}`}>{inv.status}</span></td>
                   <td className="px-5 py-3 text-[14px] font-medium">${inv.total.toFixed(2)}</td>
                   <td className="px-5 py-3 text-[13px] text-[#64748d]">{inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : "—"}</td>
-                  <td className="px-5 py-3">{inv.status !== "paid" && <button onClick={() => markPaid(inv.id)} className="text-[12px] text-[#15be53] font-medium">Mark Paid</button>}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      {inv.status !== "paid" && <button onClick={() => markPaid(inv.id)} className="text-[12px] text-[#15be53] font-medium hover:underline">Mark Paid</button>}
+                      {["sent", "overdue"].includes(inv.status) && <button onClick={() => sendPaymentLink(inv.id)} className="text-[12px] text-[#533afd] font-medium hover:underline">Pay Online →</button>}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

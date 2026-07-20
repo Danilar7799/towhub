@@ -8,6 +8,9 @@ const ADMIN_NAV = [
   { href: "/admin", icon: "grid", label: "Overview" },
   { href: "/admin/companies", icon: "building", label: "Companies" },
   { href: "/admin/waitlist", icon: "clipboard", label: "Waitlist" },
+  { href: "/admin/broadcast", icon: "bell", label: "Broadcast" },
+  { href: "/admin/news", icon: "file", label: "News" },
+  { href: "/admin/ads", icon: "trending-up", label: "Ads" },
 ];
 
 function Icon({ name, size = 16 }: { name: string; size?: number }) {

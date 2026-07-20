@@ -633,3 +633,45 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
   organization: one(organizations, { fields: [notifications.orgId], references: [organizations.id] }),
 }));
+
+// ========== AD BANNERS ==========
+export const adPlacementEnum = pgEnum("ad_placement", ["top_banner", "sidebar", "inline", "modal", "footer"]);
+export const adStatusEnum = pgEnum("ad_status", ["active", "paused", "scheduled", "ended"]);
+
+export const adBanners = pgTable("ad_banners", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  placement: adPlacementEnum("placement").notNull(),
+  status: adStatusEnum("status").default("active").notNull(),
+  // Content
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  ctaText: text("cta_text"), // Call to action button text
+  ctaLink: text("cta_link"), // Where CTA leads
+  // Visual
+  imageUrl: text("image_url"), // Banner image URL
+  gifUrl: text("gif_url"), // Animated GIF URL
+  bgColor: text("bg_color").default("#533afd"),
+  textColor: text("text_color").default("#ffffff"),
+  useGradient: boolean("use_gradient").default(false),
+  gradientFrom: text("gradient_from").default("#533afd"),
+  gradientTo: text("gradient_to").default("#f96bee"),
+  // Animation
+  animation: text("animation").default("none"), // none, slide-in, fade, pulse, bounce, shimmer
+  animationDuration: integer("animation_duration").default(3000), // ms
+  // Targeting
+  targetRoles: text("target_roles").array().default(["owner", "admin", "dispatcher"]),
+  targetPlans: text("targetPlans").array().default([]),
+  excludeRoles: text("exclude_roles").array().default(["driver"]),
+  // Schedule
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  // Stats
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  // Meta
+  priority: integer("priority").default(1),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
