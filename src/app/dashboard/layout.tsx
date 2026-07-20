@@ -9,6 +9,7 @@ import { TopAdBanner } from "@/components/ads";
 import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PushNotificationPrompt } from "@/components/push-prompt";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { GlobalSearch, useGlobalSearch } from "@/components/global-search";
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
@@ -85,8 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [org, setOrg] = useState<{ name: string; status: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useKeyboardShortcuts();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const { searchOpen, openSearch, closeSearch } = useGlobalSearch();
 
   const checkAuth = useCallback(async () => {
     const res = await fetch("/api/auth/me");
@@ -212,23 +212,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-2">
             {/* Search */}
-            {user.role !== "driver" && (searchOpen ? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search jobs, customers..."
-                  className="w-[200px] px-3 py-1.5 border border-[#e5edf5] rounded text-[12px] focus:border-[#533afd] outline-none"
-                  autoFocus
-                  onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
-                />
-                <button onClick={() => { setSearchQuery(""); setSearchOpen(false); }} className="text-[#64748d] text-[12px]">✕</button>
-              </div>
-            ) : (
-              <button onClick={() => setSearchOpen(true)} className="text-[#64748d] hover:text-[#061b31] p-1.5 transition-colors" title="Search">
-                <Icon name="search" size={16} />
+            {user.role !== "driver" && (
+              <button
+                onClick={openSearch}
+                className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-[#64748d] bg-[#f6f9fc] border border-[#e5edf5] rounded-md hover:border-[#533afd]/30 hover:text-[#533afd] transition-colors"
+                title="Search (⌘K)"
+              >
+                <Icon name="search" size={14} />
+                <span className="hidden sm:inline">Search...</span>
+                <kbd className="hidden sm:flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-medium text-[#94a3b8] bg-white border border-[#e5edf5] rounded ml-2">
+                  ⌘K
+                </kbd>
               </button>
-            ))}
+            )}
             {/* Notifications */}
             <NotificationBell />
             <DarkModeToggle />

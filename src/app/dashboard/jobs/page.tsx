@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { JobTimeline } from "@/components/job-timeline";
 
 interface Job {
   id: string; status: string; source: string; customerName?: string; customerPhone?: string; customerEmail?: string;
@@ -192,6 +193,9 @@ export default function JobsPage() {
                 {selectedJob.isPaid !== undefined && <div className="flex justify-between text-[12px]"><span className="text-[#64748d]">Payment</span><span className={selectedJob.isPaid ? "text-[#15be53]" : "text-[#ea2261]"}>{selectedJob.isPaid ? "Paid" : "Unpaid"}</span></div>}
               </div>
             </div>
+
+            {/* Timeline */}
+            <JobTimeline jobId={selectedJob.id} currentStatus={selectedJob.status} createdAt={selectedJob.createdAt} completedAt={selectedJob.completedAt} />
 
             {/* Notes */}
             {selectedJob.notes && (
