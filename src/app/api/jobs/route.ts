@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { jobs } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { autoCreateInvoice } from "@/lib/auto-invoice";
+import { autoCreateCustomer } from "@/lib/auto-customer";
+import { parsePagination, buildPaginationMeta } from "@/lib/pagination";
 
 // GET - List jobs for org
 export async function GET(req: NextRequest) {
@@ -20,8 +22,23 @@ export async function GET(req: NextRequest) {
     query = db.select().from(jobs).where(and(eq(jobs.orgId, user.orgId), eq(jobs.status, status as "pending" | "assigned" | "en_route" | "on_scene" | "towing" | "completed" | "cancelled"))).orderBy(desc(jobs.createdAt));
   }
 
-  const allJobs = await query;
-  return NextResponse.json({ jobs: allJobs });
+  const pagination = parsePagination(searchParams);
+
+  let data;
+  let paginationMeta = null;
+
+  if (pagination.page > 0) {
+    // Paginated mode
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(jobs).where(eq(jobs.orgId, user.orgId));
+    const total = Number(countResult[0]?.count ?? 0);
+    data = await query.limit(pagination.limit).offset(pagination.offset);
+    paginationMeta = buildPaginationMeta(pagination, total);
+  } else {
+    // Backward-compatible: return all
+    data = await query;
+  }
+
+  return NextResponse.json({ jobs: data, ...(paginationMeta && { pagination: paginationMeta }) });
 }
 
 // POST - Create job
@@ -67,6 +84,14 @@ export async function POST(req: NextRequest) {
     notes,
     source: source || "manual",
   }).returning();
+
+  // Auto-create/update customer record
+  await autoCreateCustomer(user.orgId, {
+    customerName: customerName,
+    customerPhone: customerPhone,
+    customerEmail: customerEmail,
+    totalAmount: totalAmount,
+  });
 
   return NextResponse.json({ job });
 }

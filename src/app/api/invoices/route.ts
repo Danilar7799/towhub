@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { invoices } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
+import { parsePagination, buildPaginationMeta } from "@/lib/pagination";
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -11,11 +12,27 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
 
-  const all = await db.select().from(invoices)
-    .where(status ? and(eq(invoices.orgId, user.orgId), eq(invoices.status, status as "draft" | "sent" | "paid" | "overdue" | "cancelled")) : eq(invoices.orgId, user.orgId))
-    .orderBy(desc(invoices.createdAt));
+  const baseWhere = status
+    ? and(eq(invoices.orgId, user.orgId), eq(invoices.status, status as "draft" | "sent" | "paid" | "overdue" | "cancelled"))
+    : eq(invoices.orgId, user.orgId);
 
-  return NextResponse.json({ invoices: all });
+  const baseQuery = db.select().from(invoices).where(baseWhere).orderBy(desc(invoices.createdAt));
+
+  const pagination = parsePagination(searchParams);
+
+  let data;
+  let paginationMeta = null;
+
+  if (pagination.page > 0) {
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(invoices).where(baseWhere);
+    const total = Number(countResult[0]?.count ?? 0);
+    data = await baseQuery.limit(pagination.limit).offset(pagination.offset);
+    paginationMeta = buildPaginationMeta(pagination, total);
+  } else {
+    data = await baseQuery;
+  }
+
+  return NextResponse.json({ invoices: data, ...(paginationMeta && { pagination: paginationMeta }) });
 }
 
 export async function POST(req: NextRequest) {

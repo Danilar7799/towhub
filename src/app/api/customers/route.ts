@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { customers } from "@/db/schema";
-import { eq, and, desc, ilike, or } from "drizzle-orm";
+import { eq, and, desc, ilike, or, sql } from "drizzle-orm";
+import { parsePagination, buildPaginationMeta } from "@/lib/pagination";
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
@@ -19,8 +20,24 @@ export async function GET(req: NextRequest) {
     ).orderBy(desc(customers.createdAt));
   }
 
-  const all = await query;
-  return NextResponse.json({ customers: all });
+  const pagination = parsePagination(searchParams);
+
+  let data;
+  let paginationMeta = null;
+
+  if (pagination.page > 0) {
+    const baseWhere = q
+      ? and(eq(customers.orgId, user.orgId), or(ilike(customers.name, `%${q}%`), ilike(customers.phone, `%${q}%`), ilike(customers.email, `%${q}%`)))
+      : eq(customers.orgId, user.orgId);
+    const countResult = await db.select({ count: sql<number>`count(*)` }).from(customers).where(baseWhere);
+    const total = Number(countResult[0]?.count ?? 0);
+    data = await query.limit(pagination.limit).offset(pagination.offset);
+    paginationMeta = buildPaginationMeta(pagination, total);
+  } else {
+    data = await query;
+  }
+
+  return NextResponse.json({ customers: data, ...(paginationMeta && { pagination: paginationMeta }) });
 }
 
 export async function POST(req: NextRequest) {

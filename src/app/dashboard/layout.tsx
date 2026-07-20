@@ -6,32 +6,40 @@ import { usePathname, useRouter } from "next/navigation";
 import { NotificationProvider } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
 import { TopAdBanner } from "@/components/ads";
+import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
+
+type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", icon: "grid", label: "Overview" },
-  { href: "/dashboard/dispatch", icon: "map", label: "Dispatch" },
-  { href: "/dashboard/messages", icon: "message-circle", label: "Messages" },
-  { href: "/dashboard/jobs", icon: "list", label: "Jobs" },
-  { href: "/dashboard/calendar", icon: "calendar", label: "Calendar" },
-  { href: "/dashboard/kpi", icon: "trophy", label: "Driver KPI" },
-  { href: "/dashboard/customers", icon: "user", label: "Customers" },
-  { href: "/dashboard/fleet", icon: "truck", label: "Fleet" },
-  { href: "/dashboard/drivers", icon: "users", label: "Team" },
-  { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors" },
-  { href: "/dashboard/contracts", icon: "file-text", label: "Contracts" },
-  { href: "/dashboard/leads", icon: "link", label: "Leads" },
-  { href: "/dashboard/invoices", icon: "file", label: "Invoices" },
-  { href: "/dashboard/expenses", icon: "dollar", label: "Expenses" },
-  { href: "/dashboard/earnings", icon: "trending-up", label: "Earnings" },
-  { href: "/dashboard/reports", icon: "bar-chart", label: "Reports" },
-  { href: "/dashboard/impound", icon: "archive", label: "Impound" },
-  { href: "/dashboard/auctions", icon: "gavel", label: "Auctions" },
-  { href: "/dashboard/rates", icon: "tag", label: "Rates" },
-  { href: "/dashboard/billing", icon: "credit-card", label: "Billing" },
-  { href: "/dashboard/settings", icon: "settings", label: "Settings" },
-  { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks" },
-  { href: "/dashboard/import", icon: "download", label: "Import/Export" },
+  { href: "/dashboard", icon: "grid", label: "Overview", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+  { href: "/dashboard/dispatch", icon: "map", label: "Dispatch", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/messages", icon: "message-circle", label: "Messages", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+  { href: "/dashboard/jobs", icon: "list", label: "Jobs", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+  { href: "/dashboard/calendar", icon: "calendar", label: "Calendar", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/kpi", icon: "trophy", label: "Driver KPI", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/customers", icon: "user", label: "Customers", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/fleet", icon: "truck", label: "Fleet", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/drivers", icon: "users", label: "Team", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/contracts", icon: "file-text", label: "Contracts", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/leads", icon: "link", label: "Leads", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/invoices", icon: "file", label: "Invoices", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/expenses", icon: "dollar", label: "Expenses", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/earnings", icon: "trending-up", label: "Earnings", roles: ["super_admin", "owner", "admin", "driver"] as UserRole[] },
+  { href: "/dashboard/reports", icon: "bar-chart", label: "Reports", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/impound", icon: "archive", label: "Impound", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/auctions", icon: "gavel", label: "Auctions", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/rates", icon: "tag", label: "Rates", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/billing", icon: "credit-card", label: "Billing", roles: ["super_admin", "owner"] as UserRole[] },
+  { href: "/dashboard/settings", icon: "settings", label: "Settings", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+  { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/import", icon: "download", label: "Import/Export", roles: ["super_admin", "owner", "admin"] as UserRole[] },
 ];
+
+/** Returns true if the given role can access the nav item. */
+function canAccess(role: UserRole | string, item: { roles: UserRole[] }): boolean {
+  return item.roles.includes(role as UserRole);
+}
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   const icons: Record<string, React.ReactNode> = {
@@ -60,6 +68,7 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
     "file-text": <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>,
     "credit-card": <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>,
     gavel: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2l5 5-7 7-5-5z" /><path d="M9.5 12l-5 5 2 2 5-5" /><line x1="2" y1="22" x2="7" y2="17" /></svg>,
+    clock: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
   };
   return <>{icons[name] || null}</>;
 }
@@ -70,6 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<{ firstName: string; lastName: string; role: string; email: string } | null>(null);
   const [org, setOrg] = useState<{ name: string; status: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useKeyboardShortcuts();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -95,6 +105,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  // Filter nav items by user role
+  const visibleNavItems = NAV_ITEMS.filter(item => canAccess(user.role, item));
+
+  // Quick tabs filtered by role
+  const QUICK_TABS_BASE = [
+    { href: "/dashboard", label: "Overview" },
+    { href: "/dashboard/jobs", label: "Jobs" },
+    { href: "/dashboard/dispatch", label: "Dispatch" },
+    { href: "/dashboard/customers", label: "Customers" },
+    { href: "/dashboard/leads", label: "Leads" },
+    { href: "/dashboard/fleet", label: "Fleet" },
+    { href: "/dashboard/invoices", label: "Invoices" },
+    { href: "/dashboard/reports", label: "Reports" },
+    { href: "/dashboard/auctions", label: "Auctions" },
+    { href: "/dashboard/settings", label: "Settings" },
+  ];
+  const visibleQuickTabs = QUICK_TABS_BASE.filter(tab => {
+    const navItem = NAV_ITEMS.find(n => n.href === tab.href);
+    return navItem ? canAccess(user.role, navItem) : false;
+  });
 
   return (
     <NotificationProvider>
@@ -123,7 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(item => {
+          {visibleNavItems.map(item => {
             const active = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}
@@ -170,12 +201,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
             </button>
             <h1 className="text-[15px] font-medium text-[#061b31]" style={{ fontFeatureSettings: "'ss01'" }}>
-              {NAV_ITEMS.find(n => n.href === pathname)?.label || "Dashboard"}
+              {visibleNavItems.find(n => n.href === pathname)?.label || "Dashboard"}
             </h1>
           </div>
           <div className="flex items-center gap-2">
             {/* Search */}
-            {searchOpen ? (
+            {user.role !== "driver" && (searchOpen ? (
               <div className="flex items-center gap-2">
                 <input
                   value={searchQuery}
@@ -191,7 +222,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <button onClick={() => setSearchOpen(true)} className="text-[#64748d] hover:text-[#061b31] p-1.5 transition-colors" title="Search">
                 <Icon name="search" size={16} />
               </button>
-            )}
+            ))}
             {/* Notifications */}
             <NotificationBell />
             {/* Dispatch link */}
@@ -204,18 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Quick Tabs */}
         <div className="border-b border-[#e5edf5] bg-white px-6">
           <div className="flex items-center gap-1 overflow-x-auto">
-            {[
-              { href: "/dashboard", label: "Overview" },
-              { href: "/dashboard/jobs", label: "Jobs" },
-              { href: "/dashboard/dispatch", label: "Dispatch" },
-              { href: "/dashboard/customers", label: "Customers" },
-              { href: "/dashboard/leads", label: "Leads" },
-              { href: "/dashboard/fleet", label: "Fleet" },
-              { href: "/dashboard/invoices", label: "Invoices" },
-              { href: "/dashboard/reports", label: "Reports" },
-              { href: "/dashboard/auctions", label: "Auctions" },
-              { href: "/dashboard/settings", label: "Settings" },
-            ].map(tab => {
+            {visibleQuickTabs.map(tab => {
               const active = pathname === tab.href;
               return (
                 <Link key={tab.href} href={tab.href}
