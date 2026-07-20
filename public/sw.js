@@ -1,67 +1,83 @@
-const CACHE_NAME = "towhub-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/dashboard",
-  "/login",
-  "/features",
-  "/manifest.json",
-];
+// TowHub Service Worker — handles push notifications
+// This file must be at /public/sw.js
 
-// Install — cache static assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate — clean old caches
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
 });
 
-// Fetch — network first, fallback to cache
-self.addEventListener("fetch", (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== "GET") return;
+// Handle push notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
 
-  // Skip API calls
-  if (event.request.url.includes("/api/")) return;
+  const data = event.data.json();
+  const { title, body, icon, badge, url, tag } = data;
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+  const options = {
+    body: body || 'New notification from TowHub',
+    icon: icon || '/icons/icon-192x192.png',
+    badge: badge || '/icons/badge-72x72.png',
+    tag: tag || 'towhub-notification',
+    data: { url: url || '/dashboard' },
+    vibrate: [200, 100, 200],
+    actions: [
+      { action: 'open', title: 'View' },
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(title || 'TowHub', options)
+  );
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') return;
+
+  const url = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, focus it
+      for (const client of clientList) {
+        if (client.url.includes('/dashboard') && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
         }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
-});
-
-// Push notifications
-self.addEventListener("push", (event) => {
-  const data = event.data?.json() || { title: "TowHub", body: "New notification" };
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: data.url || "/dashboard",
+      }
+      // Otherwise open a new window
+      return clients.openWindow(url);
     })
   );
 });
 
-// Notification click
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data));
+// Handle background sync (for offline support)
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-notifications') {
+    event.waitUntil(syncNotifications());
+  }
 });
+
+async function syncNotifications() {
+  // Fetch latest notifications when back online
+  try {
+    const response = await fetch('/api/notifications');
+    if (response.ok) {
+      const data = await response.json();
+      const unread = (data.notifications || []).filter(n => !n.isRead);
+      if (unread.length > 0) {
+        self.registration.showNotification(`${unread.length} new notification${unread.length > 1 ? 's' : ''}`, {
+          body: unread[0].title,
+          tag: 'towhub-sync',
+          data: { url: '/dashboard' },
+        });
+      }
+    }
+  } catch (e) {}
+}

@@ -7,6 +7,7 @@ import { NotificationProvider } from "@/lib/notifications";
 import { NotificationBell } from "@/components/notification-bell";
 import { TopAdBanner } from "@/components/ads";
 import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
+import { PushNotificationPrompt } from "@/components/push-prompt";
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
@@ -130,6 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <NotificationProvider>
     <TopAdBanner />
+        <div className="px-6 py-2"><PushNotificationPrompt /></div>
     <div className="min-h-screen bg-[#f6f9fc] flex" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-[220px] bg-white border-r border-[#e5edf5] flex flex-col transform transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>

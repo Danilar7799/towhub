@@ -26,6 +26,7 @@
     "tailwind-merge": "^3.6.0",
     "twilio": "^6.0.2",
     "uuid": "^14.0.1",
+    "web-push": "^3.6.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^11.0.0",
+    "@types/web-push": "^3.6.4",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
