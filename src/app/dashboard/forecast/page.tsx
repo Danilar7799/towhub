@@ -263,7 +263,7 @@ export default function ForecastPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E8EE" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#425466' }} />
                 <YAxis tick={{ fontSize: 11, fill: '#425466' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
+                <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
                 <Legend />
                 <Bar dataKey="actual" name="Actual" fill="#635BFF" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="forecast" name="Forecast" fill="#80E9FF" radius={[4, 4, 0, 0]} />
@@ -279,7 +279,7 @@ export default function ForecastPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E8EE" />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#425466' }} />
                 <YAxis tick={{ fontSize: 11, fill: '#425466' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
+                <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
                 <Legend />
                 <Bar dataKey="lower" name="Lower Bound" fill="#E3E8EE" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="predicted" name="Predicted" fill="#635BFF" radius={[4, 4, 0, 0]} />
@@ -304,7 +304,7 @@ export default function ForecastPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="#E3E8EE" />
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#425466' }} label={{ value: 'Day of Month', position: 'insideBottom', offset: -4, fontSize: 11, fill: '#8898AA' }} />
               <YAxis tick={{ fontSize: 11, fill: '#425466' }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
-              <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
+              <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
               <Legend />
               <Area dataKey="upper" name="Upper CI" fill="#E8F8F0" stroke="none" fillOpacity={0.5} />
               <Area dataKey="lower" name="Lower CI" fill="#FEF3E8" stroke="none" fillOpacity={0.3} />
@@ -325,7 +325,7 @@ export default function ForecastPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E8EE" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#425466' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <YAxis type="category" dataKey="source" tick={{ fontSize: 11, fill: '#425466' }} width={140} />
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
+                <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
                 <Legend />
                 <Bar dataKey="actual" name="Actual" fill="#635BFF" radius={[0, 4, 4, 0]} barSize={14} />
                 <Bar dataKey="forecast" name="Forecast" fill="#80E9FF" radius={[0, 4, 4, 0]} barSize={14} />
@@ -427,7 +427,7 @@ export default function ForecastPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E3E8EE" />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#425466' }} />
                 <YAxis tick={{ fontSize: 11, fill: '#425466' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
+                <Tooltip formatter={(v) => `$${Number(v).toLocaleString()}`} contentStyle={{ borderRadius: 8, border: '1px solid #E3E8EE' }} />
                 <Legend />
                 <Bar dataKey="lastYear" name="2025" fill="#E3E8EE" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="thisYear" name="2026" fill="#635BFF" radius={[4, 4, 0, 0]} />

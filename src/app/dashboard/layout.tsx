@@ -34,6 +34,8 @@ const NAV_ITEMS = [
   { href: "/dashboard/rates", icon: "tag", label: "Rates", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/billing", icon: "credit-card", label: "Billing", roles: ["super_admin", "owner"] as UserRole[] },
   { href: "/dashboard/settings", icon: "settings", label: "Settings", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+  { href: "/dashboard/ai-docs", icon: "file-text", label: "AI Docs", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+  { href: "/dashboard/automation", icon: "settings", label: "Automation", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/import", icon: "download", label: "Import/Export", roles: ["super_admin", "owner", "admin"] as UserRole[] },
 ];
