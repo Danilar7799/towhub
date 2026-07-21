@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
   // Get known clients from CRM
   const orgCustomers = await db.select().from(customers).where(eq(customers.orgId, user.orgId));
-  const knownClients = orgCustomers.filter(c => c.phone).map(c => c.phone);
+  const knownClients = orgCustomers.filter(c => c.phone).map(c => c.phone as string);
 
   // Get owner phone
   const ownerPhone = org.phone || blandConfig.ownerPhone || "+1-XXX-XXX-XXXX";
