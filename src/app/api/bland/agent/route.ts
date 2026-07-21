@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const knownClients = orgCustomers.filter(c => c.phone).map(c => c.phone as string);
 
   // Get owner phone
-  const ownerPhone = org.phone || blandConfig.ownerPhone || "+1-XXX-XXX-XXXX";
+  const ownerPhone = org.phone || String(blandConfig.ownerPhone || "") || "+1-XXX-XXX-XXXX";
   const companyName = org.name || "our towing company";
 
   const prompt = buildDispatcherPrompt(companyName, knownClients, ownerPhone);
