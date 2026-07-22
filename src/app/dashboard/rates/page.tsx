@@ -297,6 +297,31 @@ export default function RatesPage() {
                 ))}
               </tbody>
             </table>
+            {/* Multiplier editing */}
+            <div className="px-5 py-4 border-t border-[#e5edf5] bg-[#f6f9fc]">
+              <div className="text-[12px] font-medium text-[#273951] mb-3">Time-based Multipliers</div>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-[11px] text-[#64748d] mb-1">🌅 Evening (6PM-10PM)</label>
+                  <div className="text-[14px] font-medium">1.25x</div>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-[#64748d] mb-1">🌙 Night (10PM-6AM)</label>
+                  <div className="text-[14px] font-medium">{sheet.afterHoursMultiplier}x</div>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-[#64748d] mb-1">📅 Weekend</label>
+                  <div className="text-[14px] font-medium">{sheet.weekendMultiplier}x</div>
+                </div>
+                <div>
+                  <label className="block text-[11px] text-[#64748d] mb-1">🎄 Holiday</label>
+                  <div className="text-[14px] font-medium">{sheet.holidayMultiplier}x</div>
+                </div>
+              </div>
+              <div className="mt-3 text-[11px] text-[#64748d]">
+                Multipliers are applied automatically based on time of call. Edit in Rate Sheet settings.
+              </div>
+            </div>
           </div>
         ))
       )}
