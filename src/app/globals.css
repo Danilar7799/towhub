@@ -14,19 +14,6 @@
   --color-warning: #f59e0b;
 }
 
-.dark {
-  --color-bg: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-text: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-border: #334155;
-  --color-accent: #818cf8;
-  --color-accent-hover: #6366f1;
-  --color-success: #4ade80;
-  --color-danger: #f87171;
-  --color-warning: #fbbf24;
-}
-
 body {
   font-family: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: "ss01";
@@ -46,14 +33,3 @@ html { scroll-behavior: smooth; }
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
-
-/* Dark mode overrides for common patterns */
-.dark .bg-white { background-color: #1e293b; }
-.dark .bg-\[#f6f9fc\] { background-color: #0f172a; }
-.dark .border-\[#e5edf5\] { border-color: #334155; }
-.dark .text-\[#061b31\] { color: #f1f5f9; }
-.dark .text-\[#64748d\] { color: #94a3b8; }
-.dark .text-\[#273951\] { color: #cbd5e1; }
-.dark .bg-\[#533afd\]\/\[0\.04\] { background-color: rgba(129, 140, 248, 0.1); }
-.dark .bg-\[#533afd\]\/\[0\.06\] { background-color: rgba(129, 140, 248, 0.12); }
-.dark .hover\:bg-\[#f6f9fc\]:hover { background-color: #1e293b; }
