@@ -134,6 +134,14 @@ function CompanyProfileTab() {
     insuranceExpiry: "", yearsInBusiness: "", description: "",
   });
   const [verificationLevel, setVerificationLevel] = useState<VerificationLevel>("Unverified");
+  const [mapProvider, setMapProvider] = useState("osrm");
+
+  useEffect(() => {
+    // Load map provider setting
+    fetch("/api/map-provider").then(r => r.json()).then(d => {
+      if (d.provider) setMapProvider(d.provider);
+    });
+  }, []);
 
   useEffect(() => {
     fetch("/api/org/profile")
@@ -243,6 +251,40 @@ function CompanyProfileTab() {
             <Field label="ZIP" value={form.zip} onChange={update("zip")} placeholder="33101" />
           </div>
         </div>
+      </div>
+
+      {/* Map Provider */}
+      <div className="bg-white border border-[#e5edf5] rounded-lg p-6">
+        <div className="text-[14px] font-medium text-[#061b31] mb-4">🗺️ Map & Routing Provider</div>
+        <p className="text-[13px] text-[#64748d] mb-4">Choose which service to use for distance calculation and routing.</p>
+        <div className="space-y-3">
+          {[
+            { id: "osrm", name: "OSRM (OpenStreetMap)", desc: "Free, no API key. Good accuracy.", icon: "🌍", free: true },
+            { id: "google", name: "Google Maps", desc: "Best accuracy, real-time traffic. Needs API key.", icon: "🗺️", free: false },
+          ].map(p => (
+            <div key={p.id} onClick={() => setMapProvider(p.id)}
+              className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${mapProvider === p.id ? "border-[#533afd] bg-[#533afd]/[0.04]" : "border-[#e5edf5] hover:border-[#b9b9f9]"}`}>
+              <div className="flex items-center gap-3">
+                <span className="text-[20px]">{p.icon}</span>
+                <div>
+                  <div className="text-[13px] font-medium">{p.name}</div>
+                  <div className="text-[11px] text-[#64748d]">{p.desc}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {p.free && <span className="text-[10px] bg-[#dcfce7] text-[#166534] px-1.5 py-0.5 rounded font-medium">Free</span>}
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${mapProvider === p.id ? "border-[#533afd] bg-[#533afd]" : "border-[#e5edf5]"}`}>
+                  {mapProvider === p.id && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {mapProvider === "google" && (
+          <div className="mt-3 p-3 bg-[#fef3c7] border border-[#fde68a] rounded-lg text-[12px] text-[#92400e]">
+            ⚠️ Google Maps requires GOOGLE_MAPS_API_KEY in environment variables. Without it, system falls back to OSRM.
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-[#e5edf5] rounded-lg p-6">
