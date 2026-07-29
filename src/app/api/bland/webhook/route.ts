@@ -2,22 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { organizations, jobs, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { parseTranscriptWithLLM, parseTranscriptRegex } from "@/lib/transcript-parser";
 
 /*
  * Bland.ai Webhook — receives call transcripts and creates jobs
  * 
- * Bland.ai sends a POST after each call with:
- * - transcript: full conversation text
- * - caller_id: phone number
- * - duration: call length in seconds
- * - metadata: custom fields we pass in
- *
- * We parse the transcript to extract:
- * - Customer name, phone
- * - Pickup address
- * - Destination (if mentioned)
- * - Vehicle info
- * - Urgency
+ * Now with LLM fallback for robust transcript parsing
  */
 
 interface BlandWebhook {
@@ -48,9 +38,20 @@ export async function POST(req: NextRequest) {
     const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
     if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 
-    // Parse transcript to extract job details
+    // Parse transcript with regex first, then LLM fallback
     const fullTranscript = concatenated_transcript || transcript || "";
-    const parsed = parseTranscript(fullTranscript);
+    let parsed = parseTranscriptRegex(fullTranscript);
+    
+    // If regex parsing yields poor results, try LLM
+    const hasGoodParse = parsed.pickupAddress || parsed.destinationAddress || parsed.vehicleMake;
+    if (!hasGoodParse && fullTranscript.length > 50) {
+      console.log("[Bland Webhook] Regex parse weak, trying LLM fallback...");
+      const llmParsed = await parseTranscriptWithLLM(fullTranscript);
+      if (llmParsed) {
+        parsed = { ...parsed, ...llmParsed };
+        console.log("[Bland Webhook] LLM parse succeeded:", parsed);
+      }
+    }
 
     // Find nearest available driver (simple: first active driver in org)
     const [availableDriver] = await db.select().from(users).where(and(eq(users.orgId, orgId), eq(users.role, "driver"), eq(users.isActive, true))).limit(1);
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
       towVehicleModel: parsed.vehicleModel,
       towVehicleYear: parsed.vehicleYear,
       towVehicleColor: parsed.vehicleColor,
+      towVehiclePlate: parsed.vehiclePlate,
       notes: `AI Dispatch Call\nDuration: ${duration}s\nTranscript: ${fullTranscript.slice(0, 500)}`,
       assignedDriverId: availableDriver?.id,
     }).returning();
@@ -84,6 +86,7 @@ export async function POST(req: NextRequest) {
       jobId: job.id,
       parsed,
       assignedDriver: availableDriver ? `${availableDriver.firstName} ${availableDriver.lastName}` : null,
+      parseMethod: hasGoodParse ? "regex" : "llm_fallback",
     });
   } catch (err) {
     console.error("Bland webhook error:", err);
@@ -101,48 +104,9 @@ export async function GET() {
     examplePayload: {
       call_id: "call_123",
       transcript: "Customer: I need a tow from 123 Main St to 456 Oak Ave. My car is a 2020 Honda Civic, blue.",
-      caller_id: "+15551234567",
+      caller_id: "+155****4567",
       duration: 120,
       metadata: { org_id: "your-org-id" },
     },
   });
-}
-
-function parseTranscript(text: string) {
-  const lower = text.toLowerCase();
-
-  // Extract customer name
-  const nameMatch = text.match(/(?:my name is|i'm|this is|calling for)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
-  const customerName = nameMatch?.[1] || null;
-
-  // Extract addresses (look for common patterns)
-  const addressPatterns = [
-    /(?:pickup|pick up|come to|at|from|located at|address is|tow from)\s+(.+?)(?:\.|,|$)/i,
-    /(\d+\s+[A-Za-z\s]+(?:street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln|way|court|ct))/i,
-  ];
-  
-  let pickupAddress = null;
-  for (const pattern of addressPatterns) {
-    const match = text.match(pattern);
-    if (match) { pickupAddress = match[1].trim().slice(0, 200); break; }
-  }
-
-  // Extract destination
-  const destMatch = text.match(/(?:to|going to|destination|drop off|deliver to)\s+(.+?)(?:\.|,|$)/i);
-  const destinationAddress = destMatch?.[1]?.trim().slice(0, 200) || null;
-
-  // Extract vehicle info
-  const yearMatch = text.match(/\b(19|20)\d{2}\b/);
-  const vehicleYear = yearMatch ? parseInt(yearMatch[0]) : null;
-
-  const makes = ["honda", "toyota", "ford", "chevy", "chevrolet", "nissan", "bmw", "mercedes", "audi", "hyundai", "kia", "mazda", "subaru", "dodge", "ram", "gmc", "jeep", "lexus", "acura", "volkswagen", "vw"];
-  const vehicleMake = makes.find(m => lower.includes(m)) || null;
-
-  const colors = ["black", "white", "silver", "gray", "red", "blue", "green", "yellow", "orange", "brown"];
-  const vehicleColor = colors.find(c => lower.includes(c)) || null;
-
-  const modelMatch = text.match(new RegExp(`(?:${makes.join("|")})\\s+([a-zA-Z\\s]+?)(?:\\s|,|\\.|$)`, "i"));
-  const vehicleModel = modelMatch?.[1]?.trim() || null;
-
-  return { customerName, pickupAddress, destinationAddress, vehicleMake, vehicleModel, vehicleYear, vehicleColor };
 }

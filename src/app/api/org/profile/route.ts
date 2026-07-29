@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
  * Organization Profile & Verification API
  * GET  /api/org/profile — get full org profile
  * PUT  /api/org/profile — update company info, licenses, verification
+ * POST /api/org/profile — update Twilio/Bland settings (for bland-config page)
  */
 
 export async function GET() {
@@ -16,6 +17,9 @@ export async function GET() {
 
   const [org] = await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
   if (!org) return NextResponse.json({ error: "Org not found" }, { status: 404 });
+
+  const settings = (org.settings as Record<string, unknown>) || {};
+  const blandConfig = (settings.blandConfig as Record<string, unknown>) || {};
 
   return NextResponse.json({
     org: {
@@ -31,6 +35,11 @@ export async function GET() {
       website: org.website,
       status: org.status,
       settings: org.settings,
+      // Twilio/Bland config
+      twilioAccountSid: settings.twilioAccountSid || null,
+      twilioAuthToken: settings.twilioAuthToken ? "••••••••" : null, // mask for security
+      twilioPhoneNumber: org.twilioPhoneNumber || null,
+      twilioLinked: blandConfig.twilioLinked || false,
     },
   });
 }
@@ -54,6 +63,38 @@ export async function PUT(req: NextRequest) {
     const currentSettings = (current?.settings as Record<string, unknown>) || {};
     updates.settings = { ...currentSettings, ...body.settings };
   }
+
+  try {
+    await db.update(organizations).set(updates).where(eq(organizations.id, user.orgId));
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+  }
+}
+
+// POST for updating Twilio/Bland config from bland-config page
+export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user || !user.orgId || !["owner", "admin"].includes(user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { twilioAccountSid, twilioAuthToken, twilioPhoneNumber } = body;
+
+  const [current] = await db.select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
+  const currentSettings = (current?.settings as Record<string, unknown>) || {};
+
+  const updates = {
+    settings: {
+      ...currentSettings,
+      twilioAccountSid,
+      twilioAuthToken,
+      twilioPhoneNumber,
+    },
+    twilioPhoneNumber,
+    updatedAt: new Date(),
+  };
 
   try {
     await db.update(organizations).set(updates).where(eq(organizations.id, user.orgId));

@@ -3,50 +3,107 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import webpush from "web-push";
 
-/*
- * Web Push Subscription API
- * POST /api/push/subscribe — save push subscription
- * POST /api/push/send — send push notification (internal)
- *
- * Requires VAPID keys: NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
- */
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+const vapidSubject = process.env.VAPID_SUBJECT || "mailto:admin@towhub.app";
+
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
+
+export async function GET() {
+  if (!vapidPublicKey) {
+    return NextResponse.json({ error: "VAPID keys not configured" }, { status: 503 });
+  }
+  return NextResponse.json({ publicKey: vapidPublicKey });
+}
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user || !user.orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.orgId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const body = await req.json();
-  const { subscription } = body;
+    const body = await req.json();
+    const { subscription, userAgent, deviceType } = body;
 
-  if (!subscription?.endpoint) {
-    return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+    if (!subscription || !subscription.endpoint) {
+      return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+    }
+
+        // Store subscription in org settings
+        const [org] = await db.select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
+        const currentSettings = (org?.settings as Record<string, unknown>) || {};
+        let pushSubscriptions = (currentSettings.pushSubscriptions as Array<Record<string, unknown>>) || [];
+
+        // Check if subscription already exists (by endpoint)
+        const existingIndex = pushSubscriptions.findIndex(s => s.endpoint === subscription.endpoint);
+
+        const subRecord = {
+      endpoint: subscription.endpoint,
+      keys: subscription.keys,
+      userId: user.id,
+      userAgent: userAgent || navigator?.userAgent || "unknown",
+      deviceType: deviceType || "web",
+      createdAt: new Date().toISOString(),
+    };
+
+    if (existingIndex >= 0) {
+      pushSubscriptions[existingIndex] = subRecord;
+    } else {
+      pushSubscriptions.push(subRecord);
+    }
+
+    // Keep only last 10 subscriptions per user
+    const userSubs = pushSubscriptions.filter(s => s.userId === user.id);
+    if (userSubs.length > 10) {
+      const toRemove = userSubs.slice(0, userSubs.length - 10).map(s => s.endpoint);
+      pushSubscriptions = pushSubscriptions.filter(s => !toRemove.includes(s.endpoint));
+    }
+
+    await db.update(organizations).set({
+      settings: { ...currentSettings, pushSubscriptions },
+      updatedAt: new Date(),
+    }).where(eq(organizations.id, user.orgId));
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[Push Subscribe] Error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
 
-  // Store subscription in org settings
-  const [org] = await db.select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
-  const settings = (org?.settings as Record<string, unknown>) || {};
-  const pushSubscriptions = (settings.pushSubscriptions as Record<string, unknown>[]) || [];
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.orgId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  // Add or update subscription
-  const existing = pushSubscriptions.findIndex((s: Record<string, unknown>) => s.userId === user.id);
-  const entry = {
-    userId: user.id,
-    endpoint: subscription.endpoint,
-    keys: subscription.keys,
-    createdAt: new Date().toISOString(),
-  };
+    const { searchParams } = new URL(req.url);
+    const endpoint = searchParams.get("endpoint");
+    
+    if (!endpoint) {
+      return NextResponse.json({ error: "Endpoint required" }, { status: 400 });
+    }
 
-  if (existing >= 0) {
-    pushSubscriptions[existing] = entry;
-  } else {
-    pushSubscriptions.push(entry);
+    const [org] = await db.select({ settings: organizations.settings }).from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
+    const currentSettings = (org?.settings as Record<string, unknown>) || {};
+    const pushSubscriptions = (currentSettings.pushSubscriptions as Array<Record<string, unknown>>) || [];
+
+    const filtered = pushSubscriptions.filter(s => s.endpoint !== endpoint);
+
+    await db.update(organizations).set({
+      settings: { ...currentSettings, pushSubscriptions: filtered },
+      updatedAt: new Date(),
+    }).where(eq(organizations.id, user.orgId));
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("[Push Unsubscribe] Error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  await db.update(organizations).set({
-    settings: { ...settings, pushSubscriptions },
-    updatedAt: new Date(),
-  }).where(eq(organizations.id, user.orgId));
-
-  return NextResponse.json({ ok: true, message: "Push notifications enabled" });
 }

@@ -219,6 +219,10 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   expenses: many(expenses),
   shifts: many(shifts),
   gpsLocations: many(gpsLocations),
+  documents: many(documents),
+  driverDocuments: many(driverDocuments),
+  vehicleDocuments: many(vehicleDocuments),
+  auditLogs: many(auditLogs),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -678,3 +682,118 @@ export const adBanners = pgTable("ad_banners", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// ========== DOCUMENTS ==========
+export const documentTypeEnum = pgEnum("document_type", [
+  "invoice", "contract", "police_report", "bill_of_lading",
+  "inspection", "driver_license", "insurance_card", "registration",
+  "photo", "other"
+]);
+
+export const documents = pgTable("documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  type: documentTypeEnum("type").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  fileUrl: text("file_url").notNull(),
+  mimeType: text("mime_type"),
+  size: integer("size"),
+  jobId: uuid("job_id").references(() => jobs.id),
+  vehicleId: uuid("vehicle_id").references(() => vehicles.id),
+  driverId: uuid("driver_id").references(() => users.id),
+  customerId: uuid("customer_id").references(() => customers.id),
+  extractedData: jsonb("extracted_data").default({}),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const documentsRelations = relations(documents, ({ one }) => ({
+  organization: one(organizations, { fields: [documents.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [documents.jobId], references: [jobs.id] }),
+  vehicle: one(vehicles, { fields: [documents.vehicleId], references: [vehicles.id] }),
+  driver: one(users, { fields: [documents.driverId], references: [users.id] }),
+  customer: one(customers, { fields: [documents.customerId], references: [customers.id] }),
+  creator: one(users, { fields: [documents.createdBy], references: [users.id] }),
+}));
+
+// ========== DRIVER DOCUMENTS (Compliance) ==========
+export const driverDocumentTypeEnum = pgEnum("driver_document_type", [
+  "cdl", "medical_card", "insurance", "registration", "background_check", "other"
+]);
+
+export const driverDocumentStatusEnum = pgEnum("driver_document_status", [
+  "valid", "expiring_30d", "expiring_7d", "expired", "missing"
+]);
+
+export const driverDocuments = pgTable("driver_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  driverId: uuid("driver_id").references(() => users.id).notNull(),
+  type: driverDocumentTypeEnum("type").notNull(),
+  fileUrl: text("file_url").notNull(),
+  issuedAt: timestamp("issued_at"),
+  expiresAt: timestamp("expires_at"),
+  status: driverDocumentStatusEnum("status").default("valid").notNull(),
+  notes: text("notes"),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const driverDocumentsRelations = relations(driverDocuments, ({ one }) => ({
+  organization: one(organizations, { fields: [driverDocuments.orgId], references: [organizations.id] }),
+  driver: one(users, { fields: [driverDocuments.driverId], references: [users.id] }),
+  creator: one(users, { fields: [driverDocuments.createdBy], references: [users.id] }),
+}));
+
+// ========== VEHICLE DOCUMENTS ==========
+export const vehicleDocumentTypeEnum = pgEnum("vehicle_document_type", [
+  "registration", "insurance", "inspection", "title", "other"
+]);
+
+export const vehicleDocuments = pgTable("vehicle_documents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  vehicleId: uuid("vehicle_id").references(() => vehicles.id).notNull(),
+  type: vehicleDocumentTypeEnum("type").notNull(),
+  fileUrl: text("file_url").notNull(),
+  issuedAt: timestamp("issued_at"),
+  expiresAt: timestamp("expires_at"),
+  status: text("status").default("valid"),
+  notes: text("notes"),
+  createdBy: uuid("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const vehicleDocumentsRelations = relations(vehicleDocuments, ({ one }) => ({
+  organization: one(organizations, { fields: [vehicleDocuments.orgId], references: [organizations.id] }),
+  vehicle: one(vehicles, { fields: [vehicleDocuments.vehicleId], references: [vehicles.id] }),
+  creator: one(users, { fields: [vehicleDocuments.createdBy], references: [users.id] }),
+}));
+
+// ========== AUDIT LOGS ==========
+export const auditActionEnum = pgEnum("audit_action", [
+  "create", "update", "delete", "view", "download", "upload", "sign", "send", "print"
+]);
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  entity: text("entity").notNull(),
+  entityId: uuid("entity_id").notNull(),
+  action: auditActionEnum("action").notNull(),
+  userId: uuid("user_id").references(() => users.id),
+  before: jsonb("before"),
+  after: jsonb("after"),
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  organization: one(organizations, { fields: [auditLogs.orgId], references: [organizations.id] }),
+  user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
+}));
