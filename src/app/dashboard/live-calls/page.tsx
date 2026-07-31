@@ -25,15 +25,6 @@ interface NotificationSettings {
   notifyRoles: string[]; // "owner", "dispatcher", "admin"
 }
 
-const PRIMARY = "#533afd";
-const SUCCESS = "#15be53";
-const WARNING = "#f59e0b";
-const DANGER = "#ef4444";
-const MUTED = "#64748d";
-const TEXT = "#061b31";
-const BG = "#f6f9fc";
-const BORDER = "#e5edf5";
-
 export default function LiveCallMonitorPage() {
   const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
   const [recentCalls, setRecentCalls] = useState<ActiveCall[]>([]);
@@ -47,7 +38,22 @@ export default function LiveCallMonitorPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [users, setUsers] = useState<Array<{ id: string; firstName: string; lastName: string; role: string }>>([]);
   const transcriptRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const triggerNotification = (call: ActiveCall) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification("📞 Incoming Call", {
+        body: `${call.callerName || call.callerPhone} is calling`,
+        icon: "/favicon.ico",
+        tag: `call-${call.id}`,
+      });
+    }
+    if (notificationSettings.soundEnabled) {
+      try {
+        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVggoKIc2BXZHyhoaRzTzVAY3yDeHBdTl57iYiDeXFhUVx4h4iEeXRgVV17hYeGenZgUlx6hIiGeXZhUV17hIaFeXVhUVx6hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hA==");
+        audio.play().catch(() => {});
+      } catch {}
+    }
+  };
 
   // Poll for active calls every 3 seconds
   useEffect(() => {
@@ -86,24 +92,6 @@ export default function LiveCallMonitorPage() {
     }
   }, [selectedCall?.transcript]);
 
-  const triggerNotification = (call: ActiveCall) => {
-    // Browser notification
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification("📞 Incoming Call", {
-        body: `${call.callerName || call.callerPhone} is calling`,
-        icon: "/favicon.ico",
-        tag: `call-${call.id}`,
-      });
-    }
-
-    // Sound notification
-    if (notificationSettings.soundEnabled) {
-      try {
-        const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVggoKIc2BXZHyhoaRzTzVAY3yDeHBdTl57iYiDeXFhUVx4h4iEeXRgVV17hYeGenZgUlx6hIiGeXZhUV17hIaFeXVhUVx6hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hIaGenVhUVx7hA==");
-        audio.play().catch(() => {});
-      } catch {}
-    }
-  };
 
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
