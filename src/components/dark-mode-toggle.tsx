@@ -9,14 +9,14 @@ export function DarkModeToggle() {
     const stored = localStorage.getItem("towhub_theme");
     if (stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
       setDark(true);
-      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
     }
   }, []);
 
   const toggle = () => {
     const next = !dark;
     setDark(next);
-    document.documentElement.classList.toggle("dark", next);
+    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
     localStorage.setItem("towhub_theme", next ? "dark" : "light");
   };
 
