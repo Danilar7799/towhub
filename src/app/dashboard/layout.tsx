@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { NotificationProvider } from "@/lib/notifications";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { NotificationBell } from "@/components/notification-bell";
 import { TopAdBanner } from "@/components/ads";
 import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PushNotificationPrompt } from "@/components/push-prompt";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search";
+import { NotificationProvider } from "@/lib/notifications";
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
@@ -43,7 +44,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/import", icon: "download", label: "Import/Export", roles: ["super_admin", "owner", "admin"] as UserRole[] },
 ];
 
-/** Returns true if the given role can access the nav item. */
 function canAccess(role: UserRole | string, item: { roles: UserRole[] }): boolean {
   return item.roles.includes(role as UserRole);
 }
@@ -87,8 +87,8 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<{ firstName: string; lastName: string; role: string; email: string } | null>(null);
-  const [org, setOrg] = useState<{ name: string; status: string } | null>(null);
+  const [user, setUser] = useState<{ firstName: string; lastName: string; role: string; email: string; orgId: string } | null>(null);
+  const [org, setOrg] = useState<{ name: string; status: string; id: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useKeyboardShortcuts();
   const { searchOpen, openSearch, closeSearch } = useGlobalSearch();
@@ -116,10 +116,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Filter nav items by user role
   const visibleNavItems = NAV_ITEMS.filter(item => canAccess(user.role, item));
 
-  // Quick tabs filtered by role
   const QUICK_TABS_BASE = [
     { href: "/dashboard", label: "Overview" },
     { href: "/dashboard/jobs", label: "Jobs" },
@@ -141,134 +139,135 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    <NotificationProvider>
-    <TopAdBanner />
+    <AuthProvider value={{ user: { ...user, orgId: org?.id || "" }, org }}>
+      <NotificationProvider>
+        <TopAdBanner />
         <PushNotificationPrompt />
-    <div className="min-h-screen bg-[#f6f9fc] flex" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-[220px] bg-white border-r border-[#e5edf5] flex flex-col transform transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        {/* Logo */}
-        <div className="h-14 px-5 flex items-center gap-2.5 border-b border-[#e5edf5]">
-          <div className="w-7 h-7 bg-[#533afd] rounded flex items-center justify-center text-white text-[11px] font-semibold">T</div>
-          <span className="text-[15px] font-semibold tracking-tight">TowHub</span>
-        </div>
+        <div className="min-h-screen bg-[#f6f9fc] flex" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
+          {/* Sidebar */}
+          <aside className={`fixed inset-y-0 left-0 z-40 w-[220px] bg-white border-r border-[#e5edf5] flex flex-col transform transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+            {/* Logo */}
+            <div className="h-14 px-5 flex items-center gap-2.5 border-b border-[#e5edf5]">
+              <div className="w-7 h-7 bg-[#533afd] rounded flex items-center justify-center text-white text-[11px] font-semibold">T</div>
+              <span className="text-[15px] font-semibold tracking-tight">TowHub</span>
+            </div>
 
-        {/* Org */}
-        {org && (
-          <div className="px-5 py-3 border-b border-[#e5edf5]">
-            <div className="text-[13px] font-medium text-[#061b31] truncate">{org.name}</div>
-            {org.status === "pending" && (
-              <div className="mt-1 inline-flex items-center gap-1.5 bg-[#fef3c7] text-[#92400e] text-[11px] font-medium px-2 py-0.5 rounded">
-                <div className="w-1.5 h-1.5 bg-[#f59e0b] rounded-full" />
-                Pending approval
+            {/* Org */}
+            {org && (
+              <div className="px-5 py-3 border-b border-[#e5edf5]">
+                <div className="text-[13px] font-medium text-[#061b31] truncate">{org.name}</div>
+                {org.status === "pending" && (
+                  <div className="mt-1 inline-flex items-center gap-1.5 bg-[#fef3c7] text-[#92400e] text-[11px] font-medium px-2 py-0.5 rounded">
+                    <div className="w-1.5 h-1.5 bg-[#f59e0b] rounded-full" />
+                    Pending approval
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {visibleNavItems.map(item => {
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded text-[13px] font-medium transition-colors ${
-                  active
-                    ? "bg-[#533afd]/[0.06] text-[#533afd]"
-                    : "text-[#64748d] hover:text-[#061b31] hover:bg-[#f6f9fc]"
-                }`}>
-                <Icon name={item.icon} size={16} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+            {/* Nav */}
+            <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+              {visibleNavItems.map(item => {
+                const active = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded text-[13px] font-medium transition-colors ${
+                      active
+                        ? "bg-[#533afd]/[0.06] text-[#533afd]"
+                        : "text-[#64748d] hover:text-[#061b31] hover:bg-[#f6f9fc]"
+                    }`}>
+                    <Icon name={item.icon} size={16} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-        {/* User */}
-        <div className="border-t border-[#e5edf5] px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 bg-[#533afd]/10 rounded-full flex items-center justify-center text-[#533afd] text-[11px] font-semibold shrink-0">
-                {user.firstName[0]}{user.lastName[0]}
-              </div>
-              <div className="min-w-0">
-                <div className="text-[13px] font-medium text-[#061b31] truncate">{user.firstName} {user.lastName}</div>
-                <div className="text-[11px] text-[#64748d] capitalize">{user.role}</div>
+            {/* User */}
+            <div className="border-t border-[#e5edf5] px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-7 h-7 bg-[#533afd]/10 rounded-full flex items-center justify-center text-[#533afd] text-[11px] font-semibold shrink-0">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium text-[#061b31] truncate">{user.firstName} {user.lastName}</div>
+                    <div className="text-[11px] text-[#64748d] capitalize">{user.role}</div>
+                  </div>
+                </div>
+                <button onClick={handleLogout} className="text-[#64748d] hover:text-[#dc2626] transition-colors p-1" title="Sign out">
+                  <Icon name="logOut" size={15} />
+                </button>
               </div>
             </div>
-            <button onClick={handleLogout} className="text-[#64748d] hover:text-[#dc2626] transition-colors p-1" title="Sign out">
-              <Icon name="logOut" size={15} />
-            </button>
+          </aside>
+
+          {/* Overlay */}
+          {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
+
+          {/* Main */}
+          <div className="flex-1 md:ml-[220px]">
+            {/* Header */}
+            <header className="h-14 bg-white/80 backdrop-blur-xl border-b border-[#e5edf5] px-6 flex items-center justify-between sticky top-0 z-20">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-[#64748d] p-1">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
+                </button>
+                <h1 className="text-[15px] font-medium text-[#061b31]" style={{ fontFeatureSettings: "'ss01'" }}>
+                  {visibleNavItems.find(n => n.href === pathname)?.label || "Dashboard"}
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Search */}
+                {user.role !== "driver" && (
+                  <button
+                    onClick={openSearch}
+                    className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-[#64748d] bg-[#f6f9fc] border border-[#e5edf5] rounded-md hover:border-[#533afd]/30 hover:text-[#533afd] transition-colors"
+                    title="Search (⌘K)"
+                  >
+                    <Icon name="search" size={14} />
+                    <span className="hidden sm:inline">Search...</span>
+                    <kbd className="hidden sm:flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-medium text-[#94a3b8] bg-white border border-[#e5edf5] rounded ml-2">
+                      ⌘K
+                    </kbd>
+                  </button>
+                )}
+                {/* Notifications */}
+                <NotificationBell />
+                <DarkModeToggle />
+                {/* Dispatch link */}
+                <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block ml-2">
+                  Dispatch →
+                </a>
+              </div>
+            </header>
+
+            {/* Quick Tabs */}
+            <div className="border-b border-[#e5edf5] bg-white px-6">
+              <div className="flex items-center gap-1 overflow-x-auto">
+                {visibleQuickTabs.map(tab => {
+                  const active = pathname === tab.href;
+                  return (
+                    <Link key={tab.href} href={tab.href}
+                      className={`px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                        active
+                          ? "border-[#533afd] text-[#533afd]"
+                          : "border-transparent text-[#64748d] hover:text-[#061b31] hover:border-[#e5edf5]"
+                      }`}>
+                    {tab.label}
+                  </Link>
+                );
+              })}
+              </div>
+            </div>
+
+            {/* Content */}
+            <main className="p-6">
+              {children}
+            </main>
           </div>
         </div>
-      </aside>
-
-      {/* Overlay */}
-      {sidebarOpen && <div className="fixed inset-0 bg-black/30 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
-
-      {/* Main */}
-      <div className="flex-1 md:ml-[220px]">
-        {/* Header */}
-        <header className="h-14 bg-white/80 backdrop-blur-xl border-b border-[#e5edf5] px-6 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden text-[#64748d] p-1">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-            </button>
-            <h1 className="text-[15px] font-medium text-[#061b31]" style={{ fontFeatureSettings: "'ss01'" }}>
-              {visibleNavItems.find(n => n.href === pathname)?.label || "Dashboard"}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Search */}
-            {user.role !== "driver" && (
-              <button
-                onClick={openSearch}
-                className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-[#64748d] bg-[#f6f9fc] border border-[#e5edf5] rounded-md hover:border-[#533afd]/30 hover:text-[#533afd] transition-colors"
-                title="Search (⌘K)"
-              >
-                <Icon name="search" size={14} />
-                <span className="hidden sm:inline">Search...</span>
-                <kbd className="hidden sm:flex items-center gap-0.5 px-1 py-0.5 text-[10px] font-medium text-[#94a3b8] bg-white border border-[#e5edf5] rounded ml-2">
-                  ⌘K
-                </kbd>
-              </button>
-            )}
-            {/* Notifications */}
-            <NotificationBell />
-            <DarkModeToggle />
-            {/* Dispatch link */}
-            <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block ml-2">
-              Dispatch →
-            </a>
-          </div>
-        </header>
-
-        {/* Quick Tabs */}
-        <div className="border-b border-[#e5edf5] bg-white px-6">
-          <div className="flex items-center gap-1 overflow-x-auto">
-            {visibleQuickTabs.map(tab => {
-              const active = pathname === tab.href;
-              return (
-                <Link key={tab.href} href={tab.href}
-                  className={`px-3 py-2.5 text-[12px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                    active
-                      ? "border-[#533afd] text-[#533afd]"
-                      : "border-transparent text-[#64748d] hover:text-[#061b31] hover:border-[#e5edf5]"
-                  }`}>
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content */}
-        <main className="p-6">
-          {children}
-        </main>
-      </div>
-    </div>
-    <GlobalSearch open={searchOpen} onClose={closeSearch} />
-    </NotificationProvider>
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { JobTimeline } from "@/components/job-timeline";
+import { DocumentUploader } from "@/components/ui";
+import { useAuth } from "@/lib/auth-context";
 
 interface Job {
   id: string; status: string; source: string; customerName?: string; customerPhone?: string; customerEmail?: string;
@@ -33,6 +35,7 @@ const WORKFLOW = [
 ];
 
 export default function JobsPage() {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filter, setFilter] = useState("all");
   const [showAdd, setShowAdd] = useState(false);
@@ -204,6 +207,16 @@ export default function JobsPage() {
                 {selectedJob.isPaid !== undefined && <div className="flex justify-between text-[12px]"><span className="text-[#64748d]">Payment</span><span className={selectedJob.isPaid ? "text-[#15be53]" : "text-[#ea2261]"}>{selectedJob.isPaid ? "Paid" : "Unpaid"}</span></div>}
               </div>
             </div>
+
+            {/* Documents */}
+            <DocumentUploader
+              entityType="documents"
+              entityId={selectedJob.id}
+              orgId={user?.orgId || ""}
+              acceptedTypes={["image/jpeg", "image/png", "image/webp", "application/pdf"]}
+              maxFiles={10}
+              maxSizeMB={50}
+            />
 
             {/* Timeline */}
             <JobTimeline jobId={selectedJob.id} currentStatus={selectedJob.status} createdAt={selectedJob.createdAt} completedAt={selectedJob.completedAt} />
