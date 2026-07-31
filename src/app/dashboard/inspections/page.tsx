@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { DocumentUploader } from '@/components/ui';
+import { useAuth } from '@/lib/auth-context';
 
 /* ── Design tokens ───────────────────────────────────────────────── */
 const PRIMARY = '#533afd';
@@ -122,6 +124,7 @@ const seedInspections: Inspection[] = [
 
 /* ── Main component ──────────────────────────────────────────────── */
 export default function InspectionsPage() {
+  const { user } = useAuth();
   const [inspections, setInspections] = useState<Inspection[]>(seedInspections);
   const [view, setView] = useState<'list' | 'new' | 'detail'>('list');
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
@@ -637,33 +640,14 @@ export default function InspectionsPage() {
               Photo Documentation
             </h2>
             <p style={{ color: MUTED, fontSize: 13, margin: '0 0 16px' }}>Upload photos for each vehicle section (6 exterior + 4 interior)</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-              {[...EXTERIOR_SECTIONS, ...INTERIOR_SECTIONS].map((section) => (
-                <div
-                  key={section.id}
-                  style={{
-                    border: `1.5px dashed ${BORDER}`,
-                    borderRadius: 10,
-                    padding: '20px 12px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 8,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = PRIMARY; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = BORDER; }}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={MUTED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                  <span style={{ fontSize: 12, fontWeight: 500, color: MUTED, textAlign: 'center' }}>{section.label}</span>
-                </div>
-              ))}
-            </div>
+            <DocumentUploader
+              entityType="documents"
+              entityId={jobId || 'new-inspection'}
+              orgId={user?.orgId || ''}
+              acceptedTypes={["image/jpeg", "image/png", "image/webp", "image/heic"]}
+              maxFiles={20}
+              maxSizeMB={50}
+            />
           </div>
 
           {/* Damage notes */}
