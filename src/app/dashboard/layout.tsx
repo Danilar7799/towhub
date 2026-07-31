@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/fleet", icon: "truck", label: "Fleet", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/maintenance", icon: "settings", label: "Maintenance", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/drivers", icon: "users", label: "Team", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/compliance", icon: "shield", label: "Compliance", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/contracts", icon: "file-text", label: "Contracts", roles: ["super_admin", "owner", "admin"] as UserRole[] },
   { href: "/dashboard/leads", icon: "link", label: "Leads", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
