@@ -223,6 +223,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   driverDocuments: many(driverDocuments),
   vehicleDocuments: many(vehicleDocuments),
   auditLogs: many(auditLogs),
+  inspections: many(inspections),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -346,6 +347,33 @@ export const jobPhotos = pgTable("job_photos", {
   uploadedBy: uuid("uploaded_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ========== INSPECTIONS ==========
+export const inspectionStatusEnum = pgEnum("inspection_status", ["draft", "completed"]);
+
+export const inspections = pgTable("inspections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  jobId: uuid("job_id").references(() => jobs.id),
+  createdBy: uuid("created_by").references(() => users.id),
+  vehicle: text("vehicle").notNull(),
+  date: timestamp("date").defaultNow().notNull(),
+  status: inspectionStatusEnum("status").default("draft").notNull(),
+  exterior: jsonb("exterior").default([]),
+  interior: jsonb("interior").default([]),
+  damageNotes: text("damage_notes"),
+  odometer: text("odometer"),
+  fuelLevel: integer("fuel_level"),
+  hasSignature: boolean("has_signature").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const inspectionsRelations = relations(inspections, ({ one }) => ({
+  organization: one(organizations, { fields: [inspections.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [inspections.jobId], references: [jobs.id] }),
+  creator: one(users, { fields: [inspections.createdBy], references: [users.id] }),
+}));
 
 // ========== IMPOUND LOT ==========
 export const impoundVehicles = pgTable("impound_vehicles", {
