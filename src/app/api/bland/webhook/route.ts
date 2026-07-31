@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organizations, jobs, users } from "@/db/schema";
+import { organizations, jobs, users, callLogs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { parseTranscriptWithLLM, parseTranscriptRegex } from "@/lib/transcript-parser";
 
 /*
  * Bland.ai Webhook — receives call transcripts and creates jobs
  * 
- * Now with LLM fallback for robust transcript parsing
+ * Now with:
+ * - LLM fallback for robust transcript parsing
+ * - Call log storage
+ * - AI summary generation
  */
 
 interface BlandWebhook {
@@ -24,14 +27,52 @@ interface BlandWebhook {
   ended_at: string;
 }
 
+// Simple summary generator from transcript
+function generateSummary(transcript: string, parsed: Record<string, unknown>): string {
+  const parts: string[] = [];
+
+  if (parsed.customerName) parts.push(`Caller: ${parsed.customerName}`);
+  if (parsed.pickupAddress) parts.push(`Location: ${parsed.pickupAddress}`);
+  if (parsed.destinationAddress) parts.push(`Destination: ${parsed.destinationAddress}`);
+  if (parsed.vehicleMake || parsed.vehicleModel) {
+    parts.push(`Vehicle: ${[parsed.vehicleMake, parsed.vehicleModel, parsed.vehicleYear, parsed.vehicleColor].filter(Boolean).join(" ")}`);
+  }
+  if (parsed.vehiclePlate) parts.push(`Plate: ${parsed.vehiclePlate}`);
+
+  // Extract call type from transcript
+  const lower = transcript.toLowerCase();
+  if (lower.includes("impound") || lower.includes("impounded")) parts.push("Type: Impound inquiry");
+  else if (lower.includes("junk") || lower.includes("scrap") || lower.includes("non-running")) parts.push("Type: Junk car removal");
+  else if (lower.includes("fleet") || lower.includes("commercial") || lower.includes("business")) parts.push("Type: Fleet/commercial");
+  else if (lower.includes("tow") || lower.includes("breakdown") || lower.includes("accident") || lower.includes("lockout") || lower.includes("jump") || lower.includes("tire")) parts.push("Type: Roadside assistance");
+
+  if (parts.length === 0) return "Call completed. No details extracted.";
+
+  return parts.join(" • ");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: BlandWebhook = await req.json();
-    const { transcript, concatenated_transcript, caller_id, duration, recording_url, metadata, started_at, ended_at } = body;
+    const { call_id, transcript, concatenated_transcript, caller_id, duration, recording_url, metadata, status, started_at, ended_at } = body;
 
-    const orgId = metadata?.org_id;
+    // Try to get org_id from metadata, or find by phone number
+    let orgId = metadata?.org_id;
+
     if (!orgId) {
-      return NextResponse.json({ error: "org_id required in metadata" }, { status: 400 });
+      // Find org by the Bland phone number (to field)
+      const orgs = await db.select().from(organizations);
+      const org = orgs.find(o => {
+        const settings = o.settings as Record<string, unknown>;
+        const blandConfig = settings?.blandConfig as Record<string, unknown>;
+        return blandConfig?.phoneNumber === body.to || o.blandPhoneNumber === body.to;
+      });
+      if (org) orgId = org.id;
+    }
+
+    if (!orgId) {
+      console.log("[Bland Webhook] No org found for call:", call_id);
+      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
     }
 
     // Verify org exists
@@ -41,7 +82,7 @@ export async function POST(req: NextRequest) {
     // Parse transcript with regex first, then LLM fallback
     const fullTranscript = concatenated_transcript || transcript || "";
     let parsed = parseTranscriptRegex(fullTranscript);
-    
+
     // If regex parsing yields poor results, try LLM
     const hasGoodParse = parsed.pickupAddress || parsed.destinationAddress || parsed.vehicleMake;
     if (!hasGoodParse && fullTranscript.length > 50) {
@@ -53,7 +94,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Find nearest available driver (simple: first active driver in org)
+    // Generate summary
+    const summary = generateSummary(fullTranscript, parsed as Record<string, unknown>);
+
+    // Determine call type
+    const lower = fullTranscript.toLowerCase();
+    let callType = "roadside";
+    if (lower.includes("impound") || lower.includes("impounded")) callType = "impound";
+    else if (lower.includes("junk") || lower.includes("scrap")) callType = "junk_car";
+    else if (lower.includes("fleet") || lower.includes("commercial")) callType = "fleet";
+
+    // Determine urgency
+    let urgency = "medium";
+    if (lower.includes("emergency") || lower.includes("accident") || lower.includes("injured")) urgency = "emergency";
+    else if (lower.includes("urgent") || lower.includes("highway") || lower.includes("stuck")) urgency = "high";
+
+    // Find nearest available driver
     const [availableDriver] = await db.select().from(users).where(and(eq(users.orgId, orgId), eq(users.role, "driver"), eq(users.isActive, true))).limit(1);
 
     // Create job
@@ -70,7 +126,7 @@ export async function POST(req: NextRequest) {
       towVehicleYear: parsed.vehicleYear,
       towVehicleColor: parsed.vehicleColor,
       towVehiclePlate: parsed.vehiclePlate,
-      notes: `AI Dispatch Call\nDuration: ${duration}s\nTranscript: ${fullTranscript.slice(0, 500)}`,
+      notes: `AI Dispatch Call\nDuration: ${duration}s\nSummary: ${summary}`,
       assignedDriverId: availableDriver?.id,
     }).returning();
 
@@ -81,9 +137,32 @@ export async function POST(req: NextRequest) {
       await db.update(jobs).set({ status: "assigned", assignedAt: new Date() }).where(eq(jobs.id, job.id));
     }
 
+    // Store call log
+    await db.insert(callLogs).values({
+      orgId,
+      blandCallId: call_id,
+      callerPhone: caller_id,
+      callerName: parsed.customerName,
+      status: "completed",
+      duration: duration || 0,
+      transcript: fullTranscript,
+      summary,
+      callType,
+      serviceNeeded: parsed.serviceType,
+      pickupAddress: parsed.pickupAddress,
+      vehicleInfo: [parsed.vehicleMake, parsed.vehicleModel, parsed.vehicleYear, parsed.vehicleColor].filter(Boolean).join(" ") || undefined,
+      urgency,
+      recordingUrl: recording_url,
+      jobId: job.id,
+      metadata: metadata as Record<string, unknown>,
+      startedAt: started_at ? new Date(started_at) : null,
+      endedAt: ended_at ? new Date(ended_at) : null,
+    });
+
     return NextResponse.json({
       success: true,
       jobId: job.id,
+      summary,
       parsed,
       assignedDriver: availableDriver ? `${availableDriver.firstName} ${availableDriver.lastName}` : null,
       parseMethod: hasGoodParse ? "regex" : "llm_fallback",

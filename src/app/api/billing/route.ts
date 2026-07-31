@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/db";
+import { organizations } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 /*
  * Stripe billing integration
@@ -9,8 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
  * - Professional: $99/month + 10% commission
  * - Enterprise: Custom pricing
  *
- * This endpoint returns plan info and checkout URLs.
- * Real Stripe integration requires STRIPE_SECRET_KEY env var.
+ * This endpoint returns plan info and creates Stripe checkout sessions.
  */
 
 const PLANS = {
@@ -57,20 +59,77 @@ export async function POST(req: NextRequest) {
 
   const selectedPlan = PLANS[plan as keyof typeof PLANS];
 
-  // If Stripe is configured, create checkout session
-  if (process.env.STRIPE_SECRET_KEY && selectedPlan.stripePriceId) {
-    // TODO: Create Stripe checkout session
-    // const session = await stripe.checkout.sessions.create({...});
+  // Free plan — just update org settings
+  if (plan === "starter") {
+    await db.update(organizations).set({
+      settings: {
+        ...((await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1))[0]?.settings as Record<string, unknown> || {}),
+        plan: "starter",
+      },
+      updatedAt: new Date(),
+    }).where(eq(organizations.id, user.orgId));
+
     return NextResponse.json({
-      checkoutUrl: null, // Would be session.url
       plan: selectedPlan,
-      message: "Stripe integration pending. Contact support to upgrade.",
+      message: "Switched to Starter plan (Free).",
     });
   }
 
-  // If no Stripe, just return plan info
+  // If Stripe is configured, create checkout session
+  if (process.env.STRIPE_SECRET_KEY && selectedPlan.stripePriceId) {
+    try {
+      const stripe = (await import("stripe")).default;
+      const client = new stripe(process.env.STRIPE_SECRET_KEY);
+
+      const [org] = await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
+
+      const session = await client.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "subscription",
+        line_items: [{
+          price: selectedPlan.stripePriceId,
+          quantity: 1,
+        }],
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://towhub.vercel.app"}/dashboard/billing?success=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://towhub.vercel.app"}/dashboard/billing?canceled=true`,
+        customer_email: user.email,
+        metadata: {
+          orgId: user.orgId,
+          plan: plan,
+        },
+        subscription_data: {
+          metadata: {
+            orgId: user.orgId,
+            plan: plan,
+          },
+        },
+      });
+
+      return NextResponse.json({
+        checkoutUrl: session.url,
+        plan: selectedPlan,
+      });
+    } catch (err) {
+      console.error("Stripe checkout error:", err);
+      return NextResponse.json({
+        plan: selectedPlan,
+        message: "Stripe error. Contact support to upgrade.",
+        error: String(err),
+      });
+    }
+  }
+
+  // If no Stripe key, simulate upgrade for demo
+  await db.update(organizations).set({
+    settings: {
+      ...((await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1))[0]?.settings as Record<string, unknown> || {}),
+      plan: plan,
+    },
+    updatedAt: new Date(),
+  }).where(eq(organizations.id, user.orgId));
+
   return NextResponse.json({
     plan: selectedPlan,
-    message: `${selectedPlan.name} plan selected. ${selectedPlan.price ? `$${selectedPlan.price}/month` : "Custom pricing"}.`,
+    message: `${selectedPlan.name} plan activated! ${selectedPlan.price ? `$${selectedPlan.price}/month` : "Custom pricing"}.`,
   });
 }

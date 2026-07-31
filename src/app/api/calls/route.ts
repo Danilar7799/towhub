@@ -1,79 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
-import { organizations, jobs } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { callLogs } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 /*
- * Call Tracking — logs incoming calls for analytics
- *
- * POST /api/calls/incoming — log incoming call
+ * Call Logs API
  * GET /api/calls — list call logs
- *
- * Called by Bland.ai or Twilio when call comes in.
+ * POST /api/calls — create call log (from webhook)
  */
-
-interface CallLog {
-  id: string;
-  callerPhone: string;
-  callerName?: string;
-  duration: number;
-  status: string;
-  jobId?: string;
-  recordingUrl?: string;
-  transcript?: string;
-  createdAt: string;
-}
 
 export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user || !user.orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [org] = await db.select().from(organizations).where(eq(organizations.id, user.orgId)).limit(1);
-  const settings = (org?.settings as Record<string, unknown>) || {};
-  const callLogs = ((settings.callLogs as CallLog[]) || []).slice(0, 100);
+  const { searchParams } = new URL(req.url);
+  const active = searchParams.get("active") === "true";
 
-  return NextResponse.json({
-    calls: callLogs,
-    stats: {
-      total: callLogs.length,
-      avgDuration: callLogs.length > 0 ? Math.round(callLogs.reduce((s, c) => s + c.duration, 0) / callLogs.length) : 0,
-      convertedToJob: callLogs.filter(c => c.jobId).length,
-    },
-  });
+  let query = db
+    .select()
+    .from(callLogs)
+    .where(eq(callLogs.orgId, user.orgId))
+    .orderBy(desc(callLogs.createdAt))
+    .limit(50);
+
+  const calls = await query;
+
+  // Transform for frontend
+  const transformed = calls.map(c => ({
+    id: c.id,
+    callerPhone: c.callerPhone,
+    callerName: c.callerName,
+    status: c.status,
+    duration: c.duration || 0,
+    transcript: c.transcript ? JSON.parse(c.transcript) : [],
+    summary: c.summary,
+    callType: c.callType,
+    serviceNeeded: c.serviceNeeded,
+    pickupAddress: c.pickupAddress,
+    vehicleInfo: c.vehicleInfo,
+    urgency: c.urgency,
+    jobId: c.jobId,
+    startedAt: c.startedAt || c.createdAt,
+    createdAt: c.createdAt,
+  }));
+
+  // Stats
+  const stats = {
+    total: transformed.length,
+    avgDuration: transformed.length > 0 ? transformed.reduce((s, c) => s + c.duration, 0) / transformed.length : 0,
+    convertedToJob: transformed.filter(c => c.jobId).length,
+  };
+
+  return NextResponse.json({ calls: transformed, stats });
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { orgId, callerPhone, callerName, duration, status, jobId, recordingUrl, transcript } = body;
+  const { orgId, blandCallId, callerPhone, callerName, status, duration, transcript, summary, callType, serviceNeeded, pickupAddress, vehicleInfo, urgency, recordingUrl, jobId, startedAt, endedAt, metadata } = body;
 
-  if (!orgId || !callerPhone) return NextResponse.json({ error: "orgId and callerPhone required" }, { status: 400 });
+  if (!orgId || !callerPhone) {
+    return NextResponse.json({ error: "orgId and callerPhone required" }, { status: 400 });
+  }
 
-  const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
-  if (!org) return NextResponse.json({ error: "Org not found" }, { status: 404 });
-
-  const settings = (org.settings as Record<string, unknown>) || {};
-  const callLogs = ((settings.callLogs as CallLog[]) || []);
-
-  callLogs.unshift({
-    id: `call_${Date.now()}`,
+  const [created] = await db.insert(callLogs).values({
+    orgId,
+    blandCallId,
     callerPhone,
     callerName,
-    duration: duration || 0,
     status: status || "completed",
-    jobId,
+    duration: duration || 0,
+    transcript: typeof transcript === "string" ? transcript : JSON.stringify(transcript || []),
+    summary,
+    callType,
+    serviceNeeded,
+    pickupAddress,
+    vehicleInfo,
+    urgency,
     recordingUrl,
-    transcript: transcript?.slice(0, 1000),
-    createdAt: new Date().toISOString(),
-  });
+    jobId,
+    metadata,
+    startedAt: startedAt ? new Date(startedAt) : null,
+    endedAt: endedAt ? new Date(endedAt) : null,
+  }).returning();
 
-  // Keep last 500 calls
-  const trimmed = callLogs.slice(0, 500);
-
-  await db.update(organizations).set({
-    settings: { ...settings, callLogs: trimmed },
-    updatedAt: new Date(),
-  }).where(eq(organizations.id, orgId));
-
-  return NextResponse.json({ success: true, message: "Call logged" });
+  return NextResponse.json({ call: created });
 }

@@ -224,6 +224,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   vehicleDocuments: many(vehicleDocuments),
   auditLogs: many(auditLogs),
   inspections: many(inspections),
+  callLogs: many(callLogs),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -373,6 +374,35 @@ export const inspectionsRelations = relations(inspections, ({ one }) => ({
   organization: one(organizations, { fields: [inspections.orgId], references: [organizations.id] }),
   job: one(jobs, { fields: [inspections.jobId], references: [jobs.id] }),
   creator: one(users, { fields: [inspections.createdBy], references: [users.id] }),
+}));
+
+// ========== CALL LOGS ==========
+export const callLogs = pgTable("call_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  blandCallId: text("bland_call_id"),
+  callerPhone: text("caller_phone").notNull(),
+  callerName: text("caller_name"),
+  status: text("status").default("completed").notNull(), // ringing, in_progress, completed, missed
+  duration: integer("duration").default(0),
+  transcript: text("transcript"),
+  summary: text("summary"),
+  callType: text("call_type"), // roadside, impound, junk_car, fleet, voicemail
+  serviceNeeded: text("service_needed"),
+  pickupAddress: text("pickup_address"),
+  vehicleInfo: text("vehicle_info"),
+  urgency: text("urgency"), // low, medium, high, emergency
+  recordingUrl: text("recording_url"),
+  jobId: uuid("job_id").references(() => jobs.id),
+  metadata: jsonb("metadata"),
+  startedAt: timestamp("started_at"),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const callLogsRelations = relations(callLogs, ({ one }) => ({
+  organization: one(organizations, { fields: [callLogs.orgId], references: [organizations.id] }),
+  job: one(jobs, { fields: [callLogs.jobId], references: [jobs.id] }),
 }));
 
 // ========== IMPOUND LOT ==========
