@@ -8,7 +8,6 @@ import { NotificationBell } from "@/components/notification-bell";
 import { TopAdBanner } from "@/components/ads";
 import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PushNotificationPrompt } from "@/components/push-prompt";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search";
 import { NotificationProvider } from "@/lib/notifications";
 
@@ -236,7 +235,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
                 {/* Notifications */}
                 <NotificationBell />
-                <DarkModeToggle />
                 {/* Dispatch link */}
                 <a href="/dashboard/dispatch" className="text-[12px] text-[#64748d] hover:text-[#533afd] transition-colors hidden sm:block ml-2">
                   Dispatch →
