@@ -1,7 +1,7 @@
 "use client";
 
+import { forwardRef, type ReactNode, type HTMLAttributes, type ButtonHTMLAttributes, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes, type CSSProperties, type DragEvent, useRef, useEffect, useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
-import { forwardRef, type ReactNode, type HTMLAttributes, type ButtonHTMLAttributes } from "react";
 
 /* ──────────────────────────────────────────────
    DESIGN TOKENS (matching globals.css)
@@ -61,31 +61,31 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fontFamily: "'Source Sans 3', system-ui, sans-serif",
       fontFeatureSettings: "'ss01'",
       WebkitFontSmoothing: "antialiased",
-    } as React.CSSProperties;
+    } as CSSProperties;
 
-    const variantStyles: Record<string, React.CSSProperties> = {
-      primary: { background: colors.primary, color: "#fff", boxShadow: `0 2px 8px rgba(83,58,253,0.3)` },
-      secondary: { background: colors.bgSecondary, color: colors.text, border: `1px solid ${colors.border}` },
-      ghost: { background: "transparent", color: colors.primary },
-      danger: { background: colors.danger, color: "#fff" },
-      success: { background: colors.success, color: "#fff" },
-    };
+        const variantStyles: Record<string, CSSProperties> = {
+          primary: { background: colors.primary, color: "#fff", boxShadow: `0 2px 8px rgba(83,58,253,0.3)` },
+          secondary: { background: colors.bgSecondary, color: colors.text, border: `1px solid ${colors.border}` },
+          ghost: { background: "transparent", color: colors.primary },
+          danger: { background: colors.danger, color: "#fff" },
+          success: { background: colors.success, color: "#fff" },
+        };
 
-    const sizeStyles: Record<string, React.CSSProperties> = {
-      sm: { padding: "6px 12px", fontSize: 12, minHeight: 32 },
-      md: { padding: "10px 20px", fontSize: 13, minHeight: 40 },
-      lg: { padding: "14px 28px", fontSize: 14, minHeight: 48 },
-    };
+        const sizeStyles: Record<string, CSSProperties> = {
+          sm: { padding: "6px 12px", fontSize: 12, minHeight: 32 },
+          md: { padding: "10px 20px", fontSize: 13, minHeight: 40 },
+          lg: { padding: "14px 28px", fontSize: 14, minHeight: 48 },
+        };
 
-    const hoverStyles: Record<string, React.CSSProperties> = {
-      primary: { background: colors.primaryHover, boxShadow: `0 4px 12px rgba(83,58,253,0.4)` },
-      secondary: { background: "#ebf0f7", borderColor: "#b9b9f9" },
-      ghost: { background: colors.primaryLight },
-      danger: { background: "#c02020" },
-      success: { background: "#0fa844" },
-    };
+        const hoverStyles: Record<string, CSSProperties> = {
+          primary: { background: colors.primaryHover, boxShadow: `0 4px 12px rgba(83,58,253,0.4)` },
+          secondary: { background: "#ebf0f7", borderColor: "#b9b9f9" },
+          ghost: { background: colors.primaryLight },
+          danger: { background: "#c02020" },
+          success: { background: "#0fa844" },
+        };
 
-    const style: React.CSSProperties = {
+        const style: CSSProperties = {
       ...baseStyles,
       ...variantStyles[variant],
       ...sizeStyles[size],
@@ -121,7 +121,7 @@ Button.displayName = "Button";
 /* ──────────────────────────────────────────────
    INPUT / TEXTAREA / SELECT
    ────────────────────────────────────────────── */
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
@@ -170,7 +170,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 );
 Input.displayName = "Input";
 
-export const Textarea = forwardRef<HTMLTextAreaElement, InputProps>(
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string;
+  error?: string;
+  hint?: string;
+}
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, label, error, hint, id, ...props }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
     return (
@@ -370,7 +376,7 @@ interface ModalProps {
 export function Modal({ open, onClose, title, description, children, size = "md", showClose = true }: ModalProps) {
   if (!open) return null;
 
-  const sizeStyles: Record<string, React.CSSProperties> = {
+  const sizeStyles: Record<string, CSSProperties> = {
     sm: { maxWidth: 400 },
     md: { maxWidth: 560 },
     lg: { maxWidth: 720 },
@@ -547,10 +553,10 @@ interface DropdownProps {
 }
 
 export function Dropdown({ trigger, items, align = "right" }: DropdownProps) {
-  const [open, setOpen] = React.useState(false);
-  const ref = React.useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -672,7 +678,7 @@ export function Skeleton({ className, variant = "text", width, height, lines = 3
     backgroundSize: "200% 100%",
     animation: "shimmer 1.5s infinite",
     borderRadius: variant === "circular" ? radii.full : variant === "rectangular" ? radii.md : radii.sm,
-  } as React.CSSProperties;
+  } as CSSProperties;
 
   if (variant === "text") {
     return (
@@ -721,8 +727,6 @@ export function Spinner({ className, size = "md", color = colors.primary, ...pro
 /* ──────────────────────────────────────────────
    DOCUMENT UPLOADER COMPONENT
    ────────────────────────────────────────────── */
-import { useState, useCallback, useRef } from "react";
-import { cn } from "@/lib/utils";
 
 interface UploadedFile { id: string; name: string; type: string; size: number; url: string; preview?: string; }
 type DocType = "invoice" | "contract" | "police_report" | "bill_of_lading" | "inspection" | "driver_license" | "insurance_card" | "registration" | "photo" | "other";
