@@ -17,6 +17,7 @@ type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "grid", label: "Overview", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
   { href: "/dashboard/dispatch", icon: "map", label: "Dispatch", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+  { href: "/dashboard/live-calls", icon: "phone", label: "Live Calls", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
   { href: "/dashboard/messages", icon: "message-circle", label: "Messages", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
   { href: "/dashboard/jobs", icon: "list", label: "Jobs", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
   { href: "/dashboard/calendar", icon: "calendar", label: "Calendar", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
