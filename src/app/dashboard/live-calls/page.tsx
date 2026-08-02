@@ -25,6 +25,10 @@ interface NotificationSettings {
   notifyRoles: string[]; // "owner", "dispatcher", "admin"
 }
 
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
+
 export default function LiveCallMonitorPage() {
   const [activeCalls, setActiveCalls] = useState<ActiveCall[]>([]);
   const [recentCalls, setRecentCalls] = useState<ActiveCall[]>([]);
@@ -175,37 +179,50 @@ export default function LiveCallMonitorPage() {
             ) : (
               <div className="space-y-2">
                 {activeCalls.map(call => {
-                  const s = statusColor(call.status);
-                  return (
-                    <div
-                      key={call.id}
-                      onClick={() => setSelectedCall(call)}
-                      className={`bg-white border rounded-lg p-3 cursor-pointer transition-all hover:shadow-md ${
-                        selectedCall?.id === call.id ? "border-[#533afd] shadow-[0_4px_12px_rgba(83,58,253,0.1)]" : "border-[#e5edf5]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[14px] font-medium text-[#061b31]">{call.callerName || "Unknown"}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${s.bg} ${s.text} ${s.border}`}>
-                          {call.status === "ringing" ? "🔔 Ringing" : "🟢 Live"}
-                        </span>
-                      </div>
-                      <div className="text-[12px] text-[#64748d]">{call.callerPhone}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-[#94a3b8]">{formatDuration(call.duration)}</span>
-                        {call.urgency && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                            call.urgency === "emergency" ? "bg-[#fef2f2] text-[#991b1b]" :
-                            call.urgency === "high" ? "bg-[#fef3c7] text-[#92400e]" :
-                            "bg-[#f3f4f6] text-[#4b5563]"
-                          }`}>
-                            {call.urgency}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                                const s = statusColor(call.status);
+                                const copyCallInfo = () => {
+                                  const info = `Call: ${call.id}\nCaller: ${call.callerName || call.callerPhone}\nPhone: ${call.callerPhone}\nStatus: ${call.status}\nDuration: ${formatDuration(call.duration)}\nType: ${call.callType || "N/A"}\nService: ${call.serviceNeeded || "N/A"}\nLocation: ${call.pickupAddress || "N/A"}\nVehicle: ${call.vehicleInfo || "N/A"}\nUrgency: ${call.urgency || "N/A"}\nStarted: ${new Date(call.startedAt).toLocaleString()}`;
+                                  copyToClipboard(info);
+                                };
+                                return (
+                                  <div
+                                    key={call.id}
+                                    onClick={() => setSelectedCall(call)}
+                                    className={`bg-white border rounded-lg p-3 cursor-pointer transition-all hover:shadow-md ${
+                                      selectedCall?.id === call.id ? "border-[#533afd] shadow-[0_4px_12px_rgba(83,58,253,0.1)]" : "border-[#e5edf5]"
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[14px] font-medium text-[#061b31] truncate">{call.callerName || "Unknown"}</span>
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${s.bg} ${s.text} ${s.border}`}>
+                                          {call.status === "ringing" ? "🔔 Ringing" : "🟢 Live"}
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); copyCallInfo(); }}
+                                        className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#ea2261] transition-colors whitespace-nowrap"
+                                        title="Copy call info"
+                                      >
+                                        📋
+                                      </button>
+                                    </div>
+                                    <div className="text-[12px] text-[#64748d]">{call.callerPhone}</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-[11px] text-[#94a3b8]">{formatDuration(call.duration)}</span>
+                                      {call.urgency && (
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                          call.urgency === "emergency" ? "bg-[#fef2f2] text-[#991b1b]" :
+                                          call.urgency === "high" ? "bg-[#fef3c7] text-[#92400e]" :
+                                          "bg-[#f3f4f6] text-[#4b5563]"
+                                        }`}>
+                                          {call.urgency}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
               </div>
             )}
           </div>
@@ -216,6 +233,10 @@ export default function LiveCallMonitorPage() {
             <div className="space-y-2">
               {recentCalls.map(call => {
                 const s = statusColor(call.status);
+                const copyCallInfo = () => {
+                  const info = `Call: ${call.id}\nCaller: ${call.callerName || call.callerPhone}\nPhone: ${call.callerPhone}\nStatus: ${call.status}\nDuration: ${formatDuration(call.duration)}\nType: ${call.callType || "N/A"}\nService: ${call.serviceNeeded || "N/A"}\nLocation: ${call.pickupAddress || "N/A"}\nVehicle: ${call.vehicleInfo || "N/A"}\nUrgency: ${call.urgency || "N/A"}\nStarted: ${new Date(call.startedAt).toLocaleString()}`;
+                  copyToClipboard(info);
+                };
                 return (
                   <div
                     key={call.id}
@@ -225,10 +246,21 @@ export default function LiveCallMonitorPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[13px] font-medium">{call.callerName || "Unknown"}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${s.bg} ${s.text}`}>{call.status}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium">{call.callerName || "Unknown"}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${s.bg} ${s.text}`}>{call.status}</span>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); copyCallInfo(); }}
+                        className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#ea2261] transition-colors whitespace-nowrap"
+                        title="Copy call info"
+                      >
+                        📋
+                      </button>
                     </div>
-                    <div className="text-[11px] text-[#64748d]">{call.callerPhone} • {formatDuration(call.duration)}</div>
+                    <div className="text-[11px] text-[#64748d] flex items-center gap-2">
+                      <span>{call.callerPhone} • {formatDuration(call.duration)}</span>
+                    </div>
                   </div>
                 );
               })}
@@ -338,9 +370,16 @@ export default function LiveCallMonitorPage() {
 
               {/* Summary (after call) */}
               {selectedCall.status === "completed" && selectedCall.summary && (
-                <div className="px-5 py-4 border-t border-[#e5edf5] bg-[#f6f9fc]">
+                <div className="px-5 py-4 border-t border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
                   <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">AI Summary</div>
-                  <div className="text-[13px] text-[#061b31] leading-[1.6]">{selectedCall.summary}</div>
+                  <div className="text-[13px] text-[#061b31] leading-[1.6] flex-1">{selectedCall.summary}</div>
+                  <button
+                    onClick={() => copyToClipboard(selectedCall.summary || "")}
+                    className="text-[9px] px-2 py-1 bg-white border border-[#e5edf5] rounded hover:bg-[#f6f9fc] text-[#533afd] ml-4 whitespace-nowrap"
+                    title="Copy summary"
+                  >
+                    📋
+                  </button>
                 </div>
               )}
             </div>

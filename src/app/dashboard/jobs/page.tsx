@@ -34,6 +34,10 @@ const WORKFLOW = [
   { from: "towing", to: "completed", label: "Complete", color: "#22c55e" },
 ];
 
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
+
 export default function JobsPage() {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -89,34 +93,39 @@ export default function JobsPage() {
         {/* Job list */}
         <div className="flex-1 overflow-y-auto space-y-2">
           {filtered.length === 0 ? (
-            <div className="bg-white border border-[#e5edf5] rounded-lg p-12 text-center">
-              <div className="text-[32px] mb-3 opacity-30">📋</div>
-              <div className="text-[14px] text-[#64748d]">No {filter !== "all" ? filter : ""} jobs.</div>
-            </div>
-          ) : filtered.map(j => {
-            const s = STATUS_COLORS[j.status] || STATUS_COLORS.pending;
-            return (
-              <div key={j.id} onClick={() => setSelectedJob(j)}
-                className={`bg-white border rounded-lg p-4 cursor-pointer transition-all hover:shadow-[0_4px_12px_rgba(50,50,93,0.06)] ${selectedJob?.id === j.id ? "border-[#533afd] shadow-[0_4px_12px_rgba(83,58,253,0.1)]" : "border-[#e5edf5]"}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium border ${s.bg} ${s.text} ${s.border}`}>{j.status.replace("_", " ")}</span>
-                      <span className="text-[10px] text-[#94a3b8] capitalize">{j.source}</span>
-                      {j.isPaid && <span className="text-[10px] bg-[#dcfce7] text-[#166534] px-1.5 py-0.5 rounded font-medium">Paid</span>}
-                    </div>
-                    <div className="text-[14px] font-medium text-[#061b31] truncate">{j.customerName || "Walk-in"}</div>
-                    <div className="text-[12px] text-[#64748d] truncate mt-0.5">📍 {j.pickupAddress}</div>
-                    {j.destinationAddress && <div className="text-[12px] text-[#64748d] truncate">🏁 {j.destinationAddress}</div>}
-                  </div>
-                  <div className="text-right shrink-0">
-                    {j.totalAmount && <div className="text-[15px] font-semibold">${j.totalAmount.toFixed(0)}</div>}
-                    <div className="text-[11px] text-[#94a3b8]">{fmtDate(j.createdAt)}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                      <div className="bg-white border border-[#e5edf5] rounded-lg p-12 text-center">
+                        <div className="text-[32px] mb-3 opacity-30">📋</div>
+                        <div className="text-[14px] text-[#64748d]">No {filter !== "all" ? filter : ""} jobs.</div>
+                      </div>
+                    ) : filtered.map(j => {
+                      const s = STATUS_COLORS[j.status] || STATUS_COLORS.pending;
+                      const copyJobInfo = () => {
+                        const info = `Job: ${j.id}\nCustomer: ${j.customerName || "Walk-in"}\nStatus: ${j.status.replace("_", " ")}\nSource: ${j.source}\nPickup: ${j.pickupAddress}\nDestination: ${j.destinationAddress || "N/A"}\nVehicle: ${j.towVehicleYear ? j.towVehicleYear + " " : ""}${j.towVehicleMake || ""} ${j.towVehicleModel || ""}\nAmount: $${j.totalAmount?.toFixed(2) || "N/A"}\nCreated: ${new Date(j.createdAt).toLocaleString()}`;
+                        copyToClipboard(info);
+                      };
+                      return (
+                        <div key={j.id} onClick={() => setSelectedJob(j)}
+                          className={`bg-white border rounded-lg p-4 cursor-pointer transition-all hover:shadow-[0_4px_12px_rgba(50,50,93,0.06)] ${selectedJob?.id === j.id ? "border-[#533afd] shadow-[0_4px_12px_rgba(83,58,253,0.1)]" : "border-[#e5edf5]"}`}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium border ${s.bg} ${s.text} ${s.border}`}>{j.status.replace("_", " ")}</span>
+                                <span className="text-[10px] text-[#94a3b8] capitalize">{j.source}</span>
+                                {j.isPaid && <span className="text-[10px] bg-[#dcfce7] text-[#166534] px-1.5 py-0.5 rounded font-medium">Paid</span>}
+                              </div>
+                              <div className="text-[14px] font-medium text-[#061b31] truncate">{j.customerName || "Walk-in"}</div>
+                              <div className="text-[12px] text-[#64748d] truncate mt-0.5">📍 {j.pickupAddress}</div>
+                              {j.destinationAddress && <div className="text-[12px] text-[#64748d] truncate">🏁 {j.destinationAddress}</div>}
+                            </div>
+                            <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                              {j.totalAmount && <div className="text-[15px] font-semibold">$${j.totalAmount.toFixed(0)}</div>}
+                              <div className="text-[11px] text-[#94a3b8]">{fmtDate(j.createdAt)}</div>
+                              <button onClick={(e) => { e.stopPropagation(); copyJobInfo(); }} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd] transition-colors whitespace-nowrap" title="Copy job info">📋</button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
         </div>
       </div>
 
@@ -163,26 +172,35 @@ export default function JobsPage() {
 
             {/* Customer */}
             <div>
-              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Customer</div>
+              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2 flex items-center justify-between">
+                Customer
+                <button onClick={() => copyToClipboard(`Customer: ${selectedJob.customerName || "Walk-in"}\nPhone: ${selectedJob.customerPhone || "N/A"}\nEmail: ${selectedJob.customerEmail || "N/A"}`)} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy customer info">📋</button>
+              </div>
               <div className="text-[14px] font-medium">{selectedJob.customerName || "Walk-in"}</div>
-              {selectedJob.customerPhone && <div className="text-[13px] text-[#64748d]">📞 {selectedJob.customerPhone}</div>}
-              {selectedJob.customerEmail && <div className="text-[13px] text-[#64748d]">📧 {selectedJob.customerEmail}</div>}
+              {selectedJob.customerPhone && <div className="flex items-center gap-1.5 text-[13px] text-[#64748d]"><span>📞 {selectedJob.customerPhone}</span><button onClick={() => copyToClipboard(selectedJob.customerPhone!)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy phone">📋</button></div>}
+              {selectedJob.customerEmail && <div className="flex items-center gap-1.5 text-[13px] text-[#64748d]"><span>📧 {selectedJob.customerEmail}</span><button onClick={() => copyToClipboard(selectedJob.customerEmail!)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy email">📋</button></div>}
             </div>
 
             {/* Location */}
             <div>
-              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Location</div>
-              <div className="text-[13px]">📍 {selectedJob.pickupAddress}</div>
-              {selectedJob.destinationAddress && <div className="text-[13px] mt-1">🏁 {selectedJob.destinationAddress}</div>}
+              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2 flex items-center justify-between">
+                Location
+                <button onClick={() => copyToClipboard(`Pickup: ${selectedJob.pickupAddress}\nDestination: ${selectedJob.destinationAddress || "N/A"}\nEst. Miles: ${selectedJob.estimatedMiles || "N/A"}`)} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy location">📋</button>
+              </div>
+              <div className="text-[13px] flex items-center gap-1.5">📍 {selectedJob.pickupAddress}<button onClick={() => copyToClipboard(selectedJob.pickupAddress)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy pickup">📋</button></div>
+              {selectedJob.destinationAddress && <div className="flex items-center gap-1.5 text-[13px] mt-1">🏁 {selectedJob.destinationAddress}<button onClick={() => copyToClipboard(selectedJob.destinationAddress!)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy destination">📋</button></div>}
               {selectedJob.estimatedMiles && <div className="text-[12px] text-[#64748d] mt-1">~{selectedJob.estimatedMiles} miles</div>}
             </div>
 
             {/* Vehicle being towed */}
             {(selectedJob.towVehicleMake || selectedJob.towVehicleModel) && (
               <div>
-                <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Vehicle</div>
-                <div className="text-[13px]">{selectedJob.towVehicleYear} {selectedJob.towVehicleMake} {selectedJob.towVehicleModel}</div>
-                <div className="text-[12px] text-[#64748d]">{selectedJob.towVehicleColor} {selectedJob.towVehiclePlate && `• ${selectedJob.towVehiclePlate}`}</div>
+                <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2 flex items-center justify-between">
+                  Vehicle
+                  <button onClick={() => copyToClipboard(`Vehicle: ${selectedJob.towVehicleYear} ${selectedJob.towVehicleMake} ${selectedJob.towVehicleModel}\nColor: ${selectedJob.towVehicleColor}\nPlate: ${selectedJob.towVehiclePlate || "N/A"}`)} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy vehicle info">📋</button>
+                </div>
+                <div className="text-[13px] flex items-center gap-1.5">{selectedJob.towVehicleYear} {selectedJob.towVehicleMake} {selectedJob.towVehicleModel}</div>
+                <div className="flex items-center gap-1.5 text-[12px] text-[#64748d]">{selectedJob.towVehicleColor} {selectedJob.towVehiclePlate && <><span>•</span><span className="font-mono">{selectedJob.towVehiclePlate}</span></>}<button onClick={() => copyToClipboard(selectedJob.towVehiclePlate || "")} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy plate">📋</button></div>
               </div>
             )}
 
@@ -199,11 +217,14 @@ export default function JobsPage() {
 
             {/* Pricing */}
             <div>
-              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Pricing</div>
+              <div className="text-[11px] font-medium text-[#64748d] uppercase tracking-wider mb-2 flex items-center justify-between">
+                Pricing
+                <button onClick={() => copyToClipboard(`Base: $${selectedJob.baseRate?.toFixed(2) || "N/A"}\nMileage: $${selectedJob.mileageRate}/mi\nTotal: $${selectedJob.totalAmount?.toFixed(2) || "N/A"}\nPaid: ${selectedJob.isPaid ? "Yes" : "No"}`)} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy pricing">📋</button>
+              </div>
               <div className="space-y-1">
-                {selectedJob.baseRate && <div className="flex justify-between text-[13px]"><span className="text-[#64748d]">Base rate</span><span>${selectedJob.baseRate.toFixed(2)}</span></div>}
-                {selectedJob.mileageRate && <div className="flex justify-between text-[13px]"><span className="text-[#64748d]">Mileage</span><span>${selectedJob.mileageRate}/mi</span></div>}
-                {selectedJob.totalAmount && <div className="flex justify-between text-[14px] font-semibold pt-1 border-t border-[#e5edf5]"><span>Total</span><span>${selectedJob.totalAmount.toFixed(2)}</span></div>}
+                {selectedJob.baseRate && <div className="flex justify-between text-[13px] flex items-center gap-1.5"><span className="text-[#64748d]">Base rate</span><span className="flex items-center gap-1.5">${selectedJob.baseRate.toFixed(2)}<button onClick={() => copyToClipboard(selectedJob.baseRate!.toFixed(2))} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy">📋</button></span></div>}
+                {selectedJob.mileageRate && <div className="flex justify-between text-[13px] flex items-center gap-1.5"><span className="text-[#64748d]">Mileage</span><span className="flex items-center gap-1.5">${selectedJob.mileageRate}/mi<button onClick={() => copyToClipboard(selectedJob.mileageRate!.toString())} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy">📋</button></span></div>}
+                {selectedJob.totalAmount && <div className="flex justify-between text-[14px] font-semibold pt-1 border-t border-[#e5edf5] flex items-center gap-1.5"><span>Total</span><span className="flex items-center gap-1.5">${selectedJob.totalAmount.toFixed(2)}<button onClick={() => copyToClipboard(selectedJob.totalAmount!.toFixed(2))} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy">📋</button></span></div>}
                 {selectedJob.isPaid !== undefined && <div className="flex justify-between text-[12px]"><span className="text-[#64748d]">Payment</span><span className={selectedJob.isPaid ? "text-[#15be53]" : "text-[#ea2261]"}>{selectedJob.isPaid ? "Paid" : "Unpaid"}</span></div>}
               </div>
             </div>

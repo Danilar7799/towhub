@@ -47,6 +47,9 @@ importers:
       recharts:
         specifier: ^3.9.2
         version: 3.9.2(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react-is@16.13.1)(react@19.2.4)(redux@5.0.1)
+      retell-sdk:
+        specifier: ^5.60.0
+        version: 5.60.0
       stripe:
         specifier: ^22.3.2
         version: 22.3.2(@types/node@20.19.43)
@@ -2707,6 +2710,9 @@ packages:
     resolution: {integrity: sha512-tqt+NBWwyaMgw3zDsnygx4CByWjQEJHOPMdslYhppaQSJUtL/D4JO9CcBBlhPoI8lz9oJIDXkwXfhF4aWqP8xQ==}
     engines: {node: '>= 0.4'}
     hasBin: true
+
+  retell-sdk@5.60.0:
+    resolution: {integrity: sha512-FeVaoiW2uYSuX0GXqJsiI/9CvZVes5n5++VdzRH04Dj9INT6oLXlQUSQO480vEF7tp2MTUQWNDli+rYcv2mIeQ==}
 
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
@@ -5451,6 +5457,8 @@ snapshots:
       object-keys: 1.1.1
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
+
+  retell-sdk@5.60.0: {}
 
   reusify@1.1.0: {}
 

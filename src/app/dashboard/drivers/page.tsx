@@ -15,6 +15,10 @@ const ROLE_STYLES: Record<string, { bg: string; text: string; border: string }> 
   driver: { bg: "bg-[#fef3c7]", text: "text-[#92400e]", border: "border-[#fde68a]" },
 };
 
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
+
 export default function DriversPage() {
   const toast = useToast();
   const [users, setUsers] = useState<TeamUser[]>([]);
@@ -91,6 +95,10 @@ export default function DriversPage() {
             <tbody className="divide-y divide-[#e5edf5]">
               {users.map(u => {
                 const role = ROLE_STYLES[u.role] || ROLE_STYLES.driver;
+                const copyDriverInfo = () => {
+                  const info = `Driver: ${u.firstName} ${u.lastName}\nRole: ${u.role}\nEmail: ${u.email}\nPhone: ${u.phone || "N/A"}\nStatus: ${u.isActive ? "Active" : "Inactive"}\nCreated: ${new Date(u.createdAt).toLocaleString()}\nID: ${u.id}`;
+                  copyToClipboard(info);
+                };
                 return (
                   <tr key={u.id} className="hover:bg-[#f6f9fc]">
                     <td className="px-5 py-3">
@@ -101,8 +109,14 @@ export default function DriversPage() {
                         <span className="text-[13px] font-medium text-[#061b31]">{u.firstName} {u.lastName}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-[13px] text-[#64748d]">{u.email}</td>
-                    <td className="px-5 py-3 text-[13px] text-[#64748d]">{u.phone || "—"}</td>
+                    <td className="px-5 py-3 text-[13px] text-[#64748d] flex items-center gap-1.5">
+                      <span className="truncate max-w-[200px]">{u.email}</span>
+                      <button onClick={() => copyToClipboard(u.email)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy email">📋</button>
+                    </td>
+                    <td className="px-5 py-3 text-[13px] text-[#64748d] flex items-center gap-1.5">
+                      <span>{u.phone || "—"}</span>
+                      {u.phone && <button onClick={() => copyToClipboard(u.phone!)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]" title="Copy phone">📋</button>}
+                    </td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium border capitalize ${role.bg} ${role.text} ${role.border}`}>
                         {u.role}
@@ -114,7 +128,8 @@ export default function DriversPage() {
                         {u.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right flex items-center justify-end gap-1.5">
+                      <button onClick={copyDriverInfo} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd] transition-colors" title="Copy all info">📋</button>
                       <button onClick={() => toggleActive(u)} className="text-[12px] text-[#533afd] font-medium hover:underline">
                         {u.isActive ? "Deactivate" : "Activate"}
                       </button>

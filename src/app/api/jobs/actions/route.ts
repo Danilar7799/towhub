@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
-import { jobs } from "@/db/schema";
+import { jobs, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { sendTelegramMessage, formatJobCompletionNotification } from "@/lib/telegram";
 
 /*
  * Driver Job Actions — accept, decline (with reason), mark review requested
@@ -42,6 +43,28 @@ export async function POST(req: NextRequest) {
 
     case "complete":
       await db.update(jobs).set({ status: "completed", completedAt: now }).where(eq(jobs.id, jobId));
+      
+      // Send Telegram notification
+      try {
+        // Get driver name
+        const [driver] = await db.select({ firstName: users.firstName, lastName: users.lastName }).from(users).where(eq(users.id, user.id)).limit(1);
+        const driverName = driver ? `${driver.firstName} ${driver.lastName}` : undefined;
+        
+        const message = formatJobCompletionNotification({
+          id: job.id,
+          customerName: job.customerName || undefined,
+          pickupAddress: job.pickupAddress,
+          destinationAddress: job.destinationAddress || undefined,
+          totalAmount: job.totalAmount || undefined,
+          assignedDriverName: driverName,
+          vehicleInfo: job.towVehicleMake && job.towVehicleModel ? `${job.towVehicleYear} ${job.towVehicleMake} ${job.towVehicleModel}` : undefined,
+        });
+        
+        await sendTelegramMessage(message);
+      } catch (error) {
+        console.error("Failed to send Telegram notification:", error);
+      }
+      
       return NextResponse.json({ success: true, message: "Job completed" });
 
     case "review_requested":

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
 import { callLogs } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { sendTelegramMessage, formatCallNotification } from "@/lib/telegram";
 
 /*
  * Call Logs API
@@ -83,6 +84,27 @@ export async function POST(req: NextRequest) {
     startedAt: startedAt ? new Date(startedAt) : null,
     endedAt: endedAt ? new Date(endedAt) : null,
   }).returning();
+
+  // Send Telegram notification for new incoming calls
+  if (status === "ringing" || status === "in_progress") {
+    try {
+      const message = formatCallNotification({
+        id: created.id,
+        callerName: created.callerName || undefined,
+        callerPhone: created.callerPhone,
+        status: created.status,
+        callType: created.callType || undefined,
+        serviceNeeded: created.serviceNeeded || undefined,
+        pickupAddress: created.pickupAddress || undefined,
+        urgency: created.urgency || undefined,
+      });
+      
+      await sendTelegramMessage(message);
+    } catch (error) {
+      console.error("Failed to send Telegram notification:", error);
+      // Don't fail the request if Telegram fails
+    }
+  }
 
   return NextResponse.json({ call: created });
 }
