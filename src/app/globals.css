@@ -55,3 +55,91 @@ html { scroll-behavior: smooth; }
   color: #166534 !important;
   border-color: #bbf7d0 !important;
 }
+
+/* ═══ Stripe Design System ═══ */
+
+/* Stripe shadow tokens — blue-tinted for brand consistency */
+:root {
+  --shadow-sm: rgba(23,23,23,0.06) 0px 3px 6px;
+  --shadow-md: rgba(23,23,23,0.08) 0px 15px 35px;
+  --shadow-lg: rgba(50,50,93,0.25) 0px 30px 45px -30px, rgba(0,0,0,0.1) 0px 18px 36px -18px;
+  --shadow-xl: rgba(3,3,39,0.25) 0px 14px 21px -14px, rgba(0,0,0,0.1) 0px 8px 17px -8px;
+}
+
+/* Card hover animation — Stripe-style lift */
+.card-hover {
+  transition: box-shadow 0.2s ease-out, transform 0.15s ease-out, border-color 0.2s ease-out;
+}
+.card-hover:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: #b9b9f9;
+}
+
+/* Press feedback — scale(0.96) */
+.press-active:active {
+  transform: scale(0.96);
+  transition: transform 0.05s ease-out;
+}
+
+/* Tabular numbers for data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stagger animation for lists */
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stagger-item {
+  animation: stagger-in 0.3s ease-out forwards;
+  opacity: 0;
+}
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 50ms; }
+.stagger-item:nth-child(3) { animation-delay: 100ms; }
+.stagger-item:nth-child(4) { animation-delay: 150ms; }
+.stagger-item:nth-child(5) { animation-delay: 200ms; }
+.stagger-item:nth-child(6) { animation-delay: 250ms; }
+
+/* Skeleton shimmer — loading state */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #f6f9fc 25%, #e5edf5 50%, #f6f9fc 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: slide-up 0.25s ease-out forwards;
+}
+
+/* Toast slide-in */
+@keyframes toast-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.toast-enter {
+  animation: toast-in 0.3s ease-out forwards;
+}
+
+/* Focus ring — Stripe purple */
+.focus-ring:focus-visible {
+  outline: 2px solid #533afd;
+  outline-offset: 2px;
+}
+
+/* Badge pulse for live status */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
