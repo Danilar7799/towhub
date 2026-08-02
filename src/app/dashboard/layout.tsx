@@ -11,6 +11,8 @@ import { PushNotificationPrompt } from "@/components/push-prompt";
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search";
 import { NotificationProvider } from "@/lib/notifications";
 import { CommandPalette, useCommandPalette } from "@/components/command-palette";
+import { ToastProvider } from "@/components/toast";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
@@ -184,6 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <AuthProvider value={{ user: { ...user, orgId: org?.id || "" }, org }}>
       <NotificationProvider>
+      <ToastProvider>
         <TopAdBanner />
         <PushNotificationPrompt />
         <div className="min-h-screen bg-[#f6f9fc] flex" style={{ fontFamily: "'Source Sans 3', system-ui, sans-serif" }}>
@@ -321,10 +324,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Content */}
             <main className="p-6">
+              <Breadcrumbs />
               {children}
             </main>
           </div>
         </div>
+      </ToastProvider>
       </NotificationProvider>
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </AuthProvider>

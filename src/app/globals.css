@@ -143,3 +143,92 @@ html { scroll-behavior: smooth; }
 .pulse-soft {
   animation: pulse-soft 2s ease-in-out infinite;
 }
+
+/* ═══ Stripe Typography Hierarchy ═══ */
+.heading-page {
+  font-size: 20px;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  color: #061b31;
+  line-height: 1.2;
+}
+.heading-section {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #061b31;
+  line-height: 1.3;
+}
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748d;
+}
+.body-text {
+  font-size: 13px;
+  font-weight: 400;
+  color: #64748d;
+  line-height: 1.5;
+}
+.caption {
+  font-size: 11px;
+  font-weight: 400;
+  color: #94a3b8;
+}
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ═══ Status Badges ═══ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.badge-success { background: rgba(21,190,83,0.15); color: #108c3d; border: 1px solid rgba(21,190,83,0.3); }
+.badge-warning { background: rgba(245,158,11,0.15); color: #92400e; border: 1px solid rgba(245,158,11,0.3); }
+.badge-error { background: rgba(220,38,38,0.15); color: #991b1b; border: 1px solid rgba(220,38,38,0.3); }
+.badge-info { background: rgba(59,130,246,0.15); color: #1e40af; border: 1px solid rgba(59,130,246,0.3); }
+.badge-neutral { background: #f6f9fc; color: #64748d; border: 1px solid #e5edf5; }
+.badge-accent { background: rgba(83,58,253,0.1); color: #533afd; border: 1px solid rgba(83,58,253,0.2); }
+
+/* ═══ Compact Table ═══ */
+.table-compact {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table-compact thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f6f9fc;
+}
+.table-compact th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748d;
+  border-bottom: 1px solid #e5edf5;
+}
+.table-compact td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5edf5;
+  color: #061b31;
+}
+.table-compact tr:hover td {
+  background: #f6f9fc;
+}
+.table-compact tr:last-child td {
+  border-bottom: none;
+}
