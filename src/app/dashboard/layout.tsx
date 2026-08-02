@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { PushNotificationPrompt } from "@/components/push-prompt";
 import { GlobalSearch, useGlobalSearch } from "@/components/global-search";
 import { NotificationProvider } from "@/lib/notifications";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
@@ -93,6 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useKeyboardShortcuts();
   const { searchOpen, openSearch, closeSearch } = useGlobalSearch();
+  const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
 
   const checkAuth = useCallback(async () => {
     const res = await fetch("/api/auth/me");
@@ -225,7 +227,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {/* Search */}
                 {user.role !== "driver" && (
                   <button
-                    onClick={openSearch}
+                    onClick={() => setCmdOpen(true)}
                     className="flex items-center gap-2 px-3 py-1.5 text-[12px] text-[#64748d] bg-[#f6f9fc] border border-[#e5edf5] rounded-md hover:border-[#533afd]/30 hover:text-[#533afd] transition-colors"
                     title="Search (⌘K)"
                   >
@@ -271,6 +273,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </NotificationProvider>
+      <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
     </AuthProvider>
   );
 }
