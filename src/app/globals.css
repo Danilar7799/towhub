@@ -33,3 +33,25 @@ html { scroll-behavior: smooth; }
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out forwards;
+}
+
+/* Copy button feedback */
+.copy-success {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #bbf7d0 !important;
+}

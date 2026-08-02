@@ -117,13 +117,19 @@ export default function FleetPage() {
           {vehicles.map(v => {
             const tc = TYPE_COLORS[v.type] || TYPE_COLORS.other;
             const driverName = getDriverName(v.assignedDriverId);
+            
+            const copyVehicleInfo = () => {
+              const info = `Vehicle: ${v.name}\nType: ${v.type.replace("_", " ")}\n${v.year ? `Year: ${v.year}\n` : ""}${v.make ? `Make: ${v.make}\n` : ""}${v.model ? `Model: ${v.model}\n` : ""}${v.licensePlate ? `License Plate: ${v.licensePlate}\n` : ""}${v.color ? `Color: ${v.color}\n` : ""}${v.mileage ? `Mileage: ${v.mileage.toLocaleString()} mi\n` : ""}${v.capacityLbs ? `Capacity: ${v.capacityLbs.toLocaleString()} lbs\n` : ""}Status: ${v.isActive ? "Active" : "Inactive"}\nAssigned Driver: ${driverName || "Unassigned"}\nID: ${v.id}`;
+              navigator.clipboard.writeText(info);
+            };
+
             return (
               <div key={v.id} className={`bg-white border rounded-lg overflow-hidden hover:shadow-[0_8px_24px_rgba(50,50,93,0.06)] transition-all ${!v.isActive ? "opacity-50 border-[#e5edf5]" : "border-[#e5edf5]"}`}>
                 {/* Color accent bar */}
                 <div className="h-1" style={{ background: v.color || "#533afd" }} />
 
                 <div className="p-5">
-                  {/* Top row: Name + Status */}
+                  {/* Top row: Name + Status + Copy */}
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="text-[15px] font-semibold text-[#061b31] tracking-[-0.2px]">{v.name}</div>
@@ -131,12 +137,21 @@ export default function FleetPage() {
                         <div className="text-[13px] text-[#64748d] mt-0.5">{v.year} {v.make} {v.model}</div>
                       )}
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${v.isActive ? "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]" : "bg-[#f6f9fc] text-[#94a3b8] border-[#e5edf5]"}`}>
-                      {v.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${v.isActive ? "bg-[#dcfce7] text-[#166534] border-[#bbf7d0]" : "bg-[#f6f9fc] text-[#94a3b8] border-[#e5edf5]"}`}>
+                        {v.isActive ? "Active" : "Inactive"}
+                      </span>
+                      <button
+                        onClick={copyVehicleInfo}
+                        className="p-1.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd] transition-colors"
+                        title="Copy vehicle details"
+                      >
+                        📋
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Vehicle details */}
+                  {/* Vehicle details with copy buttons */}
                   <div className="space-y-1.5 mb-3">
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-medium border ${tc.bg} ${tc.text} ${tc.border}`}>
@@ -145,15 +160,43 @@ export default function FleetPage() {
                       {v.color && <span className="text-[12px] text-[#64748d]">{v.color}</span>}
                     </div>
                     {v.licensePlate && (
-                      <div className="text-[12px] text-[#64748d]">
-                        Plate: <span className="font-mono text-[#061b31]">{v.licensePlate}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[#64748d]">Plate:</span>
+                        <span className="font-mono text-[#061b31] flex-1 truncate">{v.licensePlate}</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(v.licensePlate || "")}
+                          className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]"
+                          title="Copy plate"
+                        >
+                          📋
+                        </button>
                       </div>
                     )}
                     {v.mileage && (
-                      <div className="text-[12px] text-[#64748d]">{v.mileage.toLocaleString()} mi</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[#64748d]">Mileage:</span>
+                        <span className="font-mono text-[#061b31]">{v.mileage.toLocaleString()} mi</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(String(v.mileage))}
+                          className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]"
+                          title="Copy mileage"
+                        >
+                          📋
+                        </button>
+                      </div>
                     )}
                     {v.capacityLbs && (
-                      <div className="text-[12px] text-[#64748d]">{v.capacityLbs.toLocaleString()} lbs capacity</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] text-[#64748d]">Capacity:</span>
+                        <span className="font-mono text-[#061b31]">{v.capacityLbs.toLocaleString()} lbs</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(String(v.capacityLbs))}
+                          className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]"
+                          title="Copy capacity"
+                        >
+                          📋
+                        </button>
+                      </div>
                     )}
                   </div>
 
