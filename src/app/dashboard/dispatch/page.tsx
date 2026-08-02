@@ -88,6 +88,18 @@ export default function DispatchConsolePage() {
         ))}
       </div>
 
+      {/* ── Map Section ── */}
+      <div className="bg-white border border-[#e5edf5] rounded-lg overflow-hidden" style={{ height: 300 }}>
+        <div className="px-4 py-2 border-b border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[14px] font-semibold">🗺️ Live Map</span>
+            <span className="text-[10px] px-2 py-0.5 bg-[#dcfce7] text-[#166534] rounded flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#15be53] rounded-full animate-pulse" /> Live</span>
+          </div>
+          <a href="/dashboard/map" target="_blank" className="text-[11px] text-[#533afd] hover:underline">⤢ Full Map →</a>
+        </div>
+        <iframe src="/dashboard/map?embed=1" className="w-full border-0" style={{ height: "calc(100% - 40px)" }} title="Live Dispatch Map" />
+      </div>
+
       {/* ── Main Content ── */}
       <div className="flex-1 min-h-0 flex gap-4">
         {/* Left: Calls + Pipeline */}
