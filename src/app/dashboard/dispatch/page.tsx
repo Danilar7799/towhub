@@ -3,452 +3,242 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-const PRIMARY = "#533afd";
-const SECONDARY = "#ea2261";
+/*
+ * Dispatch Console — single unified dashboard
+ * Clean layout: stats bar, main content (calls + pipeline), sidebar (drivers + actions)
+ * Design tokens: #533afd accent, #f6f9fc bg, #e5edf5 border, #061b31 text, #64748d body
+ */
 
 interface Driver {
-  id: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  isActive: boolean;
-  phone?: string;
-  email?: string;
+  id: string; firstName: string; lastName: string;
+  role: string; isActive: boolean; phone?: string; email?: string;
 }
 
 interface ActiveCall {
-  id: string;
-  callerPhone: string;
-  callerName?: string;
-  status: "ringing" | "in_progress" | "completed" | "missed";
-  startedAt: string;
-  duration: number;
-  transcript: Array<{ speaker: "ai" | "caller"; text: string; timestamp: string }>;
-  summary?: string;
-  callType?: string;
-  serviceNeeded?: string;
-  pickupAddress?: string;
-  vehicleInfo?: string;
-  urgency?: string;
+  id: string; callerPhone: string; callerName?: string;
+  status: string; startedAt: string; duration: number;
+  transcript?: string; summary?: string; callType?: string;
+  serviceNeeded?: string; pickupAddress?: string; vehicleInfo?: string; urgency?: string;
 }
 
 interface Job {
-  id: string;
-  status: string;
-  customerName?: string;
-  pickupAddress: string;
-  destinationAddress?: string;
-  totalAmount?: number;
-  assignedDriverId?: string;
-  source: string;
-  createdAt: string;
-  towVehicleMake?: string;
-  towVehicleModel?: string;
-  towVehicleYear?: number;
+  id: string; status: string; customerName?: string; customerPhone?: string;
+  pickupAddress: string; destinationAddress?: string;
+  totalAmount?: number; assignedDriverId?: string;
+  source: string; createdAt: string;
+  towVehicleMake?: string; towVehicleModel?: string; towVehicleYear?: number;
 }
 
 const COLUMNS = [
-  { id: "pending", label: "New", color: "#f59e0b", bg: "#fef3c7" },
-  { id: "assigned", label: "Assigned", color: "#3b82f6", bg: "#dbeafe" },
-  { id: "en_route", label: "En Route", color: "#6366f1", bg: "#e0e7ff" },
-  { id: "on_scene", label: "On Scene", color: "#a855f7", bg: "#f3e8ff" },
-  { id: "completed", label: "Done", color: "#15be53", bg: "#dcfce7" },
+  { id: "pending", label: "New", color: "#f59e0b" },
+  { id: "assigned", label: "Assigned", color: "#3b82f6" },
+  { id: "en_route", label: "En Route", color: "#6366f1" },
+  { id: "on_scene", label: "On Scene", color: "#a855f7" },
+  { id: "towing", label: "Towing", color: "#f97316" },
+  { id: "completed", label: "Done", color: "#15be53" },
 ];
 
-function DriverStatusWidget({ drivers, onCopy }: { drivers: Driver[]; onCopy: (d: Driver) => void }) {
-  const online = drivers.filter(d => d.isActive);
-  const offline = drivers.filter(d => !d.isActive);
-
-  return (
-    <div className="p-3">
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="bg-[#dcfce7] rounded-lg p-3 text-center">
-          <div className="text-[22px] font-semibold text-[#166534]">{online.length}</div>
-          <div className="text-[11px] text-[#166534]">Online</div>
-        </div>
-        <div className="bg-[#f3f4f6] rounded-lg p-3 text-center">
-          <div className="text-[22px] font-semibold text-[#4b5563]">{offline.length}</div>
-          <div className="text-[11px] text-[#4b5563]">Offline</div>
-        </div>
-      </div>
-      <div className="space-y-1.5 max-h-[180px] overflow-y-auto">
-        {drivers.slice(0, 8).map(d => (
-          <div key={d.id} className="flex items-center gap-2 p-2 rounded hover:bg-[#f6f9fc] border border-transparent hover:border-[#e5edf5] transition-colors">
-            <span className={`w-2.5 h-2.5 rounded-full ${d.isActive ? "bg-[#15be53]" : "bg-[#d1d5db]"}`} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] font-medium truncate">{d.firstName} {d.lastName}</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium uppercase ${d.role === "driver" ? "bg-[#fef3c7] text-[#92400e]" : d.role === "dispatcher" ? "bg-[#dcfce7] text-[#166534]" : "bg-[#f3e8ff] text-[#6b21a8]"}`}>
-                  {d.role}
-                </span>
-              </div>
-              <div className="text-[10px] text-[#64748d] truncate">{d.email || d.phone || "No contact info"}</div>
-            </div>
-            <button onClick={() => onCopy(d)} className="text-[9px] px-2 py-1 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd] transition-colors whitespace-nowrap" title="Copy driver info">📋 Copy</button>
-          </div>
-        ))}
-        {drivers.length === 0 && <div className="text-center py-4 text-[12px] text-[#94a3b8]">No drivers added yet</div>}
-      </div>
-    </div>
-  );
-}
-
-function LiveCallsWidget({ calls, onCopy }: { calls: ActiveCall[]; onCopy: (c: ActiveCall) => void }) {
-  const activeCalls = calls.filter(c => c.status === "ringing" || c.status === "in_progress");
-  const recentCalls = calls.filter(c => c.status === "completed" || c.status === "missed").slice(0, 5);
-
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "ringing": return { bg: "#fef3c7", text: "#92400e", border: "#fde68a" };
-      case "in_progress": return { bg: "#dcfce7", text: "#166534", border: "#bbf7d0" };
-      case "completed": return { bg: "#dbeafe", text: "#1e40af", border: "#bfdbfe" };
-      case "missed": return { bg: "#fef2f2", text: "#991b1b", border: "#fecaca" };
-      default: return { bg: "#f3f4f6", text: "#4b5563", border: "#e5e7eb" };
-    }
-  };
-
-  if (activeCalls.length === 0 && recentCalls.length === 0) {
-    return (
-      <div className="p-8 text-center">
-        <div className="text-[32px] mb-3 opacity-20">📞</div>
-        <div className="text-[13px] text-[#64748d]">No calls yet</div>
-        <div className="text-[11px] text-[#94a3b8] mt-1">Incoming calls will appear here in real-time</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-3 space-y-2 flex-1 overflow-y-auto">
-      {activeCalls.map(call => {
-        const s = statusColor(call.status);
-        return (
-          <div key={call.id} className={`flex items-center gap-3 p-3 rounded-lg border ${s.bg} ${s.border}`}>
-            <span className="w-2.5 h-2.5 bg-[#15be53] rounded-full animate-pulse" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <div className="text-[13px] font-medium truncate">{call.callerName || call.callerPhone}</div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${s.bg} ${s.text} ${s.border}`}>
-                    {call.status === "ringing" ? "🔔 Ringing" : "🟢 Live"}
-                  </span>
-                </div>
-                <button onClick={() => onCopy(call)} className="text-[9px] px-2 py-1 bg-white/50 border border-white/30 rounded hover:bg-white text-[#ea2261] transition-colors whitespace-nowrap" title="Copy call info">📋</button>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#64748d]">
-                <span>{call.callerPhone}</span>
-                <span className="text-[#166534] font-mono">{formatDuration(call.duration)}</span>
-                {call.urgency && <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${call.urgency === "emergency" ? "bg-[#fef2f2] text-[#991b1b]" : call.urgency === "high" ? "bg-[#fef3c7] text-[#92400e]" : "bg-[#f3f4f6] text-[#4b5563]"}`}>{call.urgency}</span>}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      {recentCalls.length > 0 && (
-        <div className="pt-2 border-t border-[#e5edf5]">
-          <div className="text-[10px] font-medium text-[#64748d] uppercase tracking-wider mb-2">Recent</div>
-          <div className="space-y-1.5">
-            {recentCalls.map(call => {
-              const s = statusColor(call.status);
-              return (
-                <div key={call.id} className="p-2 bg-white border border-[#e5edf5] rounded hover:bg-[#f6f9fc] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${s.bg} ${s.text}`} />
-                      <span className="text-[12px] font-medium truncate">{call.callerName || call.callerPhone}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${s.bg} ${s.text}`}>{call.status}</span>
-                      <button onClick={() => onCopy(call)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#ea2261]" title="Copy call info">📋</button>
-                    </div>
-                  </div>
-                  <div className="text-[10px] text-[#64748d] flex items-center gap-2 mt-0.5">
-                    <span>{call.callerPhone}</span>
-                    <span className="font-mono">{formatDuration(call.duration)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PipelineWidget({ jobs, onCopy }: { jobs: Job[]; onCopy: (j: Job) => void }) {
-  return (
-    <div className="p-2 flex gap-2 overflow-x-auto min-h-[200px]">
-      {COLUMNS.map(col => {
-        const colJobs = jobs.filter(j => j.status === col.id);
-        return (
-          <div key={col.id} className="flex-1 min-w-[140px] max-w-[200px]">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
-                <span className="text-[11px] font-medium text-[#64748d]">{col.label}</span>
-                <span className="text-[10px] bg-[#f3f4f6] px-1.5 py-0.5 rounded text-[#64748d]">{colJobs.length}</span>
-              </div>
-            </div>
-            <div className="space-y-1.5 bg-[#f6f9fc] rounded-lg p-2 min-h-[160px]">
-              {colJobs.slice(0, 5).map(job => (
-                <div key={job.id} className="bg-white border border-[#e5edf5] rounded p-2 hover:shadow-sm transition-shadow cursor-pointer" onClick={() => onCopy(job)}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-[11px] font-medium truncate">{job.customerName || "Walk-in"}</div>
-                  </div>
-                  {job.towVehicleMake && <div className="text-[9px] text-[#94a3b8] mb-1">{job.towVehicleYear} {job.towVehicleMake} {job.towVehicleModel}</div>}
-                  <div className="text-[10px] text-[#64748d] truncate mb-1">{job.pickupAddress}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-[#94a3b8]">{job.source}</span>
-                    {job.totalAmount && <span className="text-[10px] font-semibold" style={{ color: col.color }}>${job.totalAmount.toFixed(0)}</span>}
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); onCopy(job); }} className="w-full mt-1 text-[8px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd] transition-colors" title="Copy job details">📋 Copy Details</button>
-                </div>
-              ))}
-              {colJobs.length > 5 && <div className="text-[9px] text-[#94a3b8] text-center pt-1">+{colJobs.length - 5} more</div>}
-              {colJobs.length === 0 && <div className="text-center py-8 text-[11px] text-[#94a3b8]">Drop jobs here</div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+const fmt = (s: number) => { const m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, "0")}`; };
+const copy = (text: string) => navigator.clipboard.writeText(text);
 
 export default function DispatchConsolePage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [calls, setCalls] = useState<ActiveCall[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"screen1" | "screen2">("screen1");
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [driversRes, callsRes, jobsRes] = await Promise.all([
-          fetch("/api/drivers"),
-          fetch("/api/calls?active=true"),
-          fetch("/api/jobs"),
+        const [d, c, j] = await Promise.all([
+          fetch("/api/drivers").then(r => r.json()),
+          fetch("/api/calls?active=true").then(r => r.json()),
+          fetch("/api/jobs").then(r => r.json()),
         ]);
-        const driversData = await driversRes.json();
-        const callsData = await callsRes.json();
-        const jobsData = await jobsRes.json();
-        setDrivers(driversData.users || driversData.drivers || []);
-        setCalls(callsData.calls || []);
-        setJobs(jobsData.jobs || []);
-      } catch (e) {
-        console.error("Failed to load dispatch data:", e);
-      }
+        setDrivers(d.users || d.drivers || []);
+        setCalls(c.calls || []);
+        setJobs(j.jobs || []);
+      } catch (e) { console.error(e); }
     };
     load();
-    const interval = setInterval(load, 15000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const loadCalls = async () => {
-      try {
-        const res = await fetch("/api/calls?active=true");
-        const data = await res.json();
-        setCalls(data.calls || []);
-      } catch (e) {}
-    };
-    loadCalls();
-    const interval = setInterval(loadCalls, 3000);
-    return () => clearInterval(interval);
+    const id = setInterval(load, 10000);
+    return () => clearInterval(id);
   }, []);
 
   const online = drivers.filter(d => d.isActive);
   const activeCalls = calls.filter(c => c.status === "ringing" || c.status === "in_progress");
-  const activeJobsCount = jobs.filter(j => j.status !== "completed" && j.status !== "cancelled").length;
-
-  const copyToClipboard = (text: string) => { navigator.clipboard.writeText(text); };
-
-  const openPopOut = (url: string, title: string, width = 1000, height = 700) => {
-    const features = `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes`;
-    const win = window.open(url, `_blank_${title.replace(/\s+/g, "_")}`, features);
-    if (win) win.focus();
-    return win;
-  };
-
-  const openScreen1Full = () => openPopOut("/dashboard/map?fullscreen=1&source=dispatch", "Screen 1 - Operations", 1400, 900);
-  const openScreen2Full = () => openPopOut("/dashboard/live-calls?fullscreen=1&source=dispatch", "Screen 2 - Command Center", 1200, 900);
-
-  const copyDriverInfo = (d: Driver) => {
-    const info = `Driver: ${d.firstName} ${d.lastName}\nRole: ${d.role}\nStatus: ${d.isActive ? "Active" : "Inactive"}\nEmail: ${d.email || "N/A"}\nPhone: ${d.phone || "N/A"}\nID: ${d.id}`;
-    copyToClipboard(info);
-  };
-
-  const copyCallInfo = (call: ActiveCall) => {
-    const info = `Call: ${call.id}\nCaller: ${call.callerName || call.callerPhone}\nPhone: ${call.callerPhone}\nStatus: ${call.status}\nDuration: ${Math.floor(call.duration / 60)}:${String(call.duration % 60).padStart(2, "0")}\nType: ${call.callType || "N/A"}\nService: ${call.serviceNeeded || "N/A"}\nLocation: ${call.pickupAddress || "N/A"}\nVehicle: ${call.vehicleInfo || "N/A"}\nUrgency: ${call.urgency || "N/A"}\nStarted: ${new Date(call.startedAt).toLocaleString()}`;
-    copyToClipboard(info);
-  };
-
-  const copyJobInfo = (job: Job) => {
-    const info = `Job: ${job.id}\nCustomer: ${job.customerName || "Walk-in"}\nStatus: ${job.status.replace("_", " ")}\nSource: ${job.source}\nPickup: ${job.pickupAddress}\nDestination: ${job.destinationAddress || "N/A"}\nVehicle: ${job.towVehicleYear ? job.towVehicleYear + " " : ""}${job.towVehicleMake || ""} ${job.towVehicleModel || ""}\nAmount: $${job.totalAmount?.toFixed(2) || "N/A"}\nCreated: ${new Date(job.createdAt).toLocaleString()}`;
-    copyToClipboard(info);
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("fullscreen") === "1") {
-        setIsFullscreen(true);
-      }
-    }
-  }, []);
-
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "ringing": return { bg: "#fef3c7", text: "#92400e", border: "#fde68a" };
-      case "in_progress": return { bg: "#dcfce7", text: "#166534", border: "#bbf7d0" };
-      case "completed": return { bg: "#dbeafe", text: "#1e40af", border: "#bfdbfe" };
-      case "missed": return { bg: "#fef2f2", text: "#991b1b", border: "#fecaca" };
-      default: return { bg: "#f3f4f6", text: "#4b5563", border: "#e5e7eb" };
-    }
-  };
-
-  if (isFullscreen) {
-    const urlParams = new URLSearchParams(window.location.search);
-    const screen = urlParams.get("screen") || "screen1";
-
-    if (screen === "screen1") {
-      return (
-        <div className="h-screen w-screen" style={{ fontFeatureSettings: "'ss01'" }}>
-          <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between p-3 bg-white/95 backdrop-blur border border-[#e5edf5] rounded-lg shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 bg-[#15be53] rounded-full animate-pulse" />
-              <span className="text-[14px] font-semibold text-[#061b31]">📍 Screen 1 — Operations (Fullscreen)</span>
-              <span className="text-[11px] text-[#64748d]">Drag this window to your second monitor</span>
-            </div>
-            <a href="/dashboard/dispatch" className="px-3 py-1.5 bg-[#533afd] text-white rounded text-[11px] font-medium hover:bg-[#4434d4]">← Back to Console</a>
-          </div>
-          <iframe src="/dashboard/map?fullscreen=1&embed=1" className="w-full h-full border-0" title="Live Map" />
-        </div>
-      );
-    } else {
-      return (
-        <div className="h-screen w-screen" style={{ fontFeatureSettings: "'ss01'" }}>
-          <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between p-3 bg-white/95 backdrop-blur border border-[#e5edf5] rounded-lg shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 bg-[#ea2261] rounded-full animate-pulse" />
-              <span className="text-[14px] font-semibold text-[#061b31]">📞 Screen 2 — Command Center (Fullscreen)</span>
-              <span className="text-[11px] text-[#64748d]">Drag this window to your second monitor</span>
-            </div>
-            <a href="/dashboard/dispatch" className="px-3 py-1.5 bg-[#ea2261] text-white rounded text-[11px] font-medium hover:bg-[#d41e5a]">← Back to Console</a>
-          </div>
-          <iframe src="/dashboard/live-calls?fullscreen=1&embed=1" className="w-full h-full border-0" title="Live Calls" />
-        </div>
-      );
-    }
-  }
-
-  function renderScreen1() {
-    return (
-      <div className="h-full flex flex-col">
-        <div className="flex-1 bg-white border border-[#e5edf5] rounded-lg overflow-hidden relative min-h-0">
-          <div className="absolute top-3 right-3 z-10 flex gap-2">
-            <button onClick={openScreen1Full} className="px-3 py-1.5 bg-[#533afd] text-white rounded text-[11px] font-medium hover:bg-[#4434d4] transition-colors flex items-center gap-1">⤢ Fullscreen</button>
-          </div>
-          <div className="p-3 border-b border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[14px] font-semibold">🗺️ Live Map</span>
-              <span className="text-[11px] text-[#64748d]">GPS tracking, driver locations, job pins</span>
-            </div>
-            <span className="text-[10px] px-2 py-0.5 bg-[#dcfce7] text-[#166534] rounded flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#15be53] rounded-full animate-pulse" /> Live</span>
-          </div>
-          <div className="flex-1 min-h-0"><iframe src="/dashboard/map?embed=1" className="w-full h-full border-0" title="Live Dispatch Map" /></div>
-        </div>
-        <div className="mt-4 bg-white border border-[#e5edf5] rounded-lg overflow-hidden">
-          <div className="p-3 border-b border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="text-[14px] font-semibold">👥 Drivers Status</div>
-              <div className="text-[11px] text-[#64748d]">{online.length} online • {drivers.length} total</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => window.open("/dashboard/drivers", "_blank")} className="px-2.5 py-1.5 bg-white border border-[#e5edf5] rounded text-[10px] font-medium hover:bg-[#f6f9fc]">View All</button>
-              <button onClick={openScreen1Full} className="px-2.5 py-1.5 bg-[#533afd] text-white rounded text-[10px] font-medium hover:bg-[#4434d4]">⤢ Pop Out</button>
-            </div>
-          </div>
-          <DriverStatusWidget drivers={drivers} onCopy={copyDriverInfo} />
-        </div>
-      </div>
-    );
-  }
-
-  function renderScreen2() {
-    return (
-      <div className="h-full flex flex-col gap-4">
-        <div className="flex-1 bg-white border border-[#e5edf5] rounded-lg overflow-hidden flex flex-col min-h-0">
-          <div className="p-3 border-b border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="text-[14px] font-semibold">📞 Live Calls</div>
-              <div className="text-[11px] text-[#64748d]">Real-time monitoring with transcript</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium ${activeCalls.length > 0 ? "bg-[#dcfce7] text-[#166534]" : "bg-[#f3f4f6] text-[#4b5563]"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${activeCalls.length > 0 ? "bg-[#15be53] animate-pulse" : "bg-[#94a3b8]"}`} />
-                {activeCalls.length > 0 ? `${activeCalls.length} Live` : "No Active Calls"}
-              </span>
-              <button onClick={openScreen2Full} className="px-2.5 py-1.5 bg-[#ea2261] text-white rounded text-[10px] font-medium hover:bg-[#d41e5a]">⤢ Pop Out</button>
-            </div>
-          </div>
-          <div className="flex-1 min-h-0"><LiveCallsWidget calls={calls} onCopy={copyCallInfo} /></div>
-        </div>
-        <div className="bg-white border border-[#e5edf5] rounded-lg overflow-hidden flex-shrink-0">
-          <div className="p-3 border-b border-[#e5edf5] bg-[#f6f9fc] flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="text-[14px] font-semibold">📋 Job Pipeline</div>
-              <div className="text-[11px] text-[#64748d]">Kanban — drag to update status</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => window.open("/dashboard/kanban", "_blank")} className="px-2.5 py-1.5 bg-white border border-[#e5edf5] rounded text-[10px] font-medium hover:bg-[#f6f9fc]">Full Board</button>
-              <button onClick={openScreen2Full} className="px-2.5 py-1.5 bg-[#533afd] text-white rounded text-[10px] font-medium hover:bg-[#4434d4]">⤢ Pop Out</button>
-            </div>
-          </div>
-          <PipelineWidget jobs={jobs} onCopy={copyJobInfo} />
-        </div>
-      </div>
-    );
-  }
+  const activeJobs = jobs.filter(j => !["completed", "cancelled"].includes(j.status));
+  const todayRevenue = jobs.filter(j => j.status === "completed" && new Date(j.createdAt).toDateString() === new Date().toDateString()).reduce((s, j) => s + (j.totalAmount || 0), 0);
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col" style={{ fontFeatureSettings: "'ss01'" }}>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-[20px] font-semibold tracking-[-0.3px]">🎛️ Dispatch Console</h2>
-          <p className="text-[13px] text-[#64748d] mt-0.5"><span className="font-medium text-[#533afd]">Screen 1</span> (Map + Drivers) • <span className="font-medium text-[#ea2261]">Screen 2</span> (Calls + Pipeline)</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-3 text-[12px] text-[#64748d] p-2 bg-[#f6f9fc] rounded-lg border border-[#e5edf5]">
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-[#dcfce7] text-[#166534] rounded text-[11px] font-medium"><span className="w-1.5 h-1.5 bg-[#15be53] rounded-full" /> {online.length} Online</span>
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-[#fef3c7] text-[#92400e] rounded text-[11px] font-medium"><span className="w-1.5 h-1.5 bg-[#eab308] rounded-full" /> {activeCalls.length} Live</span>
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-[#dbeafe] text-[#1e40af] rounded text-[11px] font-medium"><span className="w-1.5 h-1.5 bg-[#3b82f6] rounded-full" /> {activeJobsCount} Active Jobs</span>
+    <div className="h-[calc(100vh-120px)] flex flex-col gap-4" style={{ fontFeatureSettings: "'ss01'" }}>
+      {/* ── Stats Bar ── */}
+      <div className="grid grid-cols-5 gap-3">
+        {[
+          { label: "ACTIVE JOBS", value: activeJobs.length, color: "#3b82f6" },
+          { label: "LIVE CALLS", value: activeCalls.length, color: activeCalls.length > 0 ? "#15be53" : "#94a3b8" },
+          { label: "DRIVERS ONLINE", value: `${online.length}/${drivers.length}`, color: "#15be53" },
+          { label: "TODAY REVENUE", value: `$${todayRevenue.toLocaleString()}`, color: "#533afd" },
+          { label: "TOTAL JOBS", value: jobs.length, color: "#64748d" },
+        ].map(s => (
+          <div key={s.label} className="bg-white border border-[#e5edf5] rounded-lg p-3">
+            <div className="text-[10px] text-[#64748d] uppercase tracking-wider">{s.label}</div>
+            <div className="text-[24px] font-light tracking-[-0.5px] mt-0.5" style={{ color: s.color }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 min-h-0 flex gap-4">
+        {/* Left: Calls + Pipeline */}
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
+          {/* Live Calls */}
+          <div className="bg-white border border-[#e5edf5] rounded-lg flex flex-col" style={{ minHeight: activeCalls.length > 0 ? 180 : 80 }}>
+            <div className="px-4 py-2.5 border-b border-[#e5edf5] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-semibold">📞 Live Calls</span>
+                {activeCalls.length > 0 && <span className="w-2 h-2 bg-[#15be53] rounded-full animate-pulse" />}
+              </div>
+              <Link href="/dashboard/live-calls" className="text-[11px] text-[#533afd] hover:underline">View All →</Link>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+              {activeCalls.length === 0 ? (
+                <div className="text-center py-4 text-[12px] text-[#94a3b8]">No active calls — incoming calls appear here in real-time</div>
+              ) : (
+                <div className="space-y-2">
+                  {activeCalls.map(call => (
+                    <div key={call.id} className="flex items-center gap-3 p-3 bg-[#dcfce7] border border-[#bbf7d0] rounded-lg">
+                      <span className="w-2.5 h-2.5 bg-[#15be53] rounded-full animate-pulse" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium">{call.callerName || call.callerPhone}</div>
+                        <div className="text-[11px] text-[#64748d]">{call.callerPhone} • {fmt(call.duration)}</div>
+                      </div>
+                      {call.urgency && <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${call.urgency === "emergency" ? "bg-[#fef2f2] text-[#991b1b]" : "bg-[#fef3c7] text-[#92400e]"}`}>{call.urgency}</span>}
+                      <button onClick={() => copy(`Call: ${call.callerName || call.callerPhone}\n${call.callerPhone}`)} className="text-[10px] px-2 py-1 bg-white border border-[#e5edf5] rounded hover:bg-[#f6f9fc] text-[#533afd]">📋</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Job Pipeline */}
+          <div className="flex-1 min-h-0 bg-white border border-[#e5edf5] rounded-lg flex flex-col">
+            <div className="px-4 py-2.5 border-b border-[#e5edf5] flex items-center justify-between">
+              <span className="text-[14px] font-semibold">📋 Job Pipeline</span>
+              <Link href="/dashboard/kanban" className="text-[11px] text-[#533afd] hover:underline">Full Board →</Link>
+            </div>
+            <div className="flex-1 min-h-0 overflow-x-auto p-3">
+              <div className="flex gap-2 h-full min-h-[200px]">
+                {COLUMNS.map(col => {
+                  const colJobs = jobs.filter(j => j.status === col.id);
+                  return (
+                    <div key={col.id} className="flex-1 min-w-[150px]">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }} />
+                        <span className="text-[11px] font-medium text-[#64748d]">{col.label}</span>
+                        <span className="text-[10px] bg-[#f3f4f6] px-1.5 py-0.5 rounded text-[#64748d]">{colJobs.length}</span>
+                      </div>
+                      <div className="space-y-1.5 bg-[#f6f9fc] rounded-lg p-1.5 min-h-[150px] max-h-[calc(100%-32px)] overflow-y-auto">
+                        {colJobs.map(job => (
+                          <div
+                            key={job.id}
+                            onClick={() => setSelectedJob(job)}
+                            className={`bg-white border rounded p-2 cursor-pointer transition-all hover:shadow-sm ${selectedJob?.id === job.id ? "border-[#533afd] shadow-sm" : "border-[#e5edf5]"}`}
+                          >
+                            <div className="text-[11px] font-medium truncate">{job.customerName || "Walk-in"}</div>
+                            <div className="text-[10px] text-[#64748d] truncate">{job.pickupAddress}</div>
+                            {job.totalAmount && <div className="text-[10px] font-semibold mt-0.5" style={{ color: col.color }}>${job.totalAmount.toFixed(0)}</div>}
+                          </div>
+                        ))}
+                        {colJobs.length === 0 && <div className="text-center py-6 text-[10px] text-[#94a3b8]">—</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mb-4 border-b border-[#e5edf5]">
-        <nav className="flex gap-1 overflow-x-auto" aria-label="Dispatch screens">
-          <button onClick={() => setActiveTab("screen1")} className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors -mb-px ${activeTab === "screen1" ? "border-[#533afd] text-[#533afd]" : "border-transparent text-[#64748d] hover:text-[#061b31] hover:border-[#e5edf5]"}`}><span className="w-2.5 h-2.5 bg-[#533afd] rounded" /><span>📍 Screen 1 — Operations</span><span className="text-[10px] px-1.5 py-0.5 bg-[#dcfce7] text-[#166534] rounded">{online.length} online</span></button>
-          <button onClick={() => setActiveTab("screen2")} className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors -mb-px ${activeTab === "screen2" ? "border-[#ea2261] text-[#ea2261]" : "border-transparent text-[#64748d] hover:text-[#061b31] hover:border-[#e5edf5]"}`}><span className="w-2.5 h-2.5 bg-[#ea2261] rounded" /><span>📞 Screen 2 — Command Center</span><span className={`text-[10px] px-1.5 py-0.5 rounded ${activeCalls.length > 0 ? "bg-[#dcfce7] text-[#166534]" : "bg-[#f3f4f6] text-[#4b5563]"}`}>{activeCalls.length > 0 ? `${activeCalls.length} Live` : "No Calls"}</span></button>
-        </nav>
-      </div>
-      <div className="flex-1 min-h-0">{activeTab === "screen1" ? renderScreen1() : renderScreen2()}</div>
-      <div className="mt-4 flex flex-wrap gap-3 border-t border-[#e5edf5] pt-4">
-        <button onClick={openScreen1Full} className="px-4 py-2 bg-[#533afd] text-white rounded-lg text-[13px] font-medium hover:bg-[#4434d4] transition-colors flex items-center gap-2 shadow-[0_2px_8px_rgba(83,58,253,0.2)]">📍 Open Screen 1 (Map) on Monitor 2</button>
-        <button onClick={openScreen2Full} className="px-4 py-2 bg-[#ea2261] text-white rounded-lg text-[13px] font-medium hover:bg-[#d41e5a] transition-colors flex items-center gap-2 shadow-[0_2px_8px_rgba(234,34,97,0.2)]">📞 Open Screen 2 (Calls) on Monitor 2</button>
-        <button onClick={() => { openScreen1Full(); setTimeout(() => openScreen2Full(), 300); }} className="px-4 py-2 bg-[#061b31] text-white rounded-lg text-[13px] font-medium hover:bg-[#0a2540] transition-colors flex items-center gap-2">⛶ Open Both Screens</button>
+
+        {/* Right Sidebar */}
+        <div className="w-[280px] shrink-0 flex flex-col gap-4">
+          {/* Selected Job Detail */}
+          {selectedJob && (
+            <div className="bg-white border border-[#e5edf5] rounded-lg">
+              <div className="px-4 py-2.5 border-b border-[#e5edf5] flex items-center justify-between">
+                <span className="text-[13px] font-semibold">Job Detail</span>
+                <button onClick={() => setSelectedJob(null)} className="text-[14px] text-[#94a3b8] hover:text-[#061b31]">×</button>
+              </div>
+              <div className="p-3 space-y-2">
+                <div>
+                  <div className="text-[10px] text-[#64748d] uppercase tracking-wider">Customer</div>
+                  <div className="text-[13px] font-medium">{selectedJob.customerName || "—"}</div>
+                  {selectedJob.customerPhone && <div className="text-[11px] text-[#533afd]">{selectedJob.customerPhone}</div>}
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#64748d] uppercase tracking-wider">Pickup</div>
+                  <div className="text-[12px]">{selectedJob.pickupAddress}</div>
+                </div>
+                {selectedJob.destinationAddress && (
+                  <div>
+                    <div className="text-[10px] text-[#64748d] uppercase tracking-wider">Destination</div>
+                    <div className="text-[12px]">{selectedJob.destinationAddress}</div>
+                  </div>
+                )}
+                {(selectedJob.towVehicleMake || selectedJob.towVehicleModel) && (
+                  <div>
+                    <div className="text-[10px] text-[#64748d] uppercase tracking-wider">Vehicle</div>
+                    <div className="text-[12px]">{selectedJob.towVehicleYear} {selectedJob.towVehicleMake} {selectedJob.towVehicleModel}</div>
+                  </div>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => copy(`Job: ${selectedJob.id}\nCustomer: ${selectedJob.customerName}\nPickup: ${selectedJob.pickupAddress}\nAmount: $${selectedJob.totalAmount || 0}`)} className="flex-1 text-[11px] py-1.5 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:bg-[#eef3f8] text-[#533afd]">📋 Copy</button>
+                  <Link href={`/dashboard/jobs?id=${selectedJob.id}`} className="flex-1 text-[11px] py-1.5 bg-[#533afd] text-white rounded text-center hover:bg-[#4434d4]">Open →</Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Drivers */}
+          <div className="bg-white border border-[#e5edf5] rounded-lg flex-1 min-h-0 flex flex-col">
+            <div className="px-4 py-2.5 border-b border-[#e5edf5] flex items-center justify-between">
+              <span className="text-[13px] font-semibold">👥 Drivers</span>
+              <span className="text-[10px] text-[#15be53] font-medium">{online.length} online</span>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto p-2">
+              {drivers.map(d => (
+                <div key={d.id} className="flex items-center gap-2 p-2 rounded hover:bg-[#f6f9fc] transition-colors">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${d.isActive ? "bg-[#15be53]" : "bg-[#d1d5db]"}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[12px] font-medium truncate">{d.firstName} {d.lastName}</div>
+                    <div className="text-[10px] text-[#64748d] truncate">{d.phone || d.email || "—"}</div>
+                  </div>
+                  <button onClick={() => copy(`${d.firstName} ${d.lastName}\n${d.phone || d.email || ""}`)} className="text-[9px] px-1.5 py-0.5 bg-[#f6f9fc] border border-[#e5edf5] rounded text-[#533afd]">📋</button>
+                </div>
+              ))}
+              {drivers.length === 0 && <div className="text-center py-4 text-[11px] text-[#94a3b8]">No drivers yet</div>}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white border border-[#e5edf5] rounded-lg p-3">
+            <div className="text-[11px] font-semibold text-[#64748d] uppercase tracking-wider mb-2">Quick Actions</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { href: "/dashboard/jobs?new=1", icon: "➕", label: "New Job" },
+                { href: "/dashboard/live-calls", icon: "📞", label: "Live Calls" },
+                { href: "/dashboard/fleet", icon: "🚛", label: "Fleet" },
+                { href: "/dashboard/reports", icon: "📊", label: "Reports" },
+              ].map(a => (
+                <Link key={a.href} href={a.href} className="flex items-center gap-2 p-2 bg-[#f6f9fc] border border-[#e5edf5] rounded hover:border-[#b9b9f9] hover:bg-white transition-colors">
+                  <span className="text-[14px]">{a.icon}</span>
+                  <span className="text-[11px] font-medium">{a.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
