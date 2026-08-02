@@ -14,36 +14,71 @@ import { CommandPalette, useCommandPalette } from "@/components/command-palette"
 
 type UserRole = "super_admin" | "owner" | "admin" | "dispatcher" | "driver";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", icon: "grid", label: "Overview", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
-  { href: "/dashboard/dispatch", icon: "map", label: "Dispatch", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/live-calls", icon: "phone", label: "Live Calls", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/messages", icon: "message-circle", label: "Messages", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
-  { href: "/dashboard/jobs", icon: "list", label: "Jobs", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
-  { href: "/dashboard/calendar", icon: "calendar", label: "Calendar", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/kpi", icon: "trophy", label: "Driver KPI", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/customers", icon: "user", label: "Customers", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/fleet", icon: "truck", label: "Fleet", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/maintenance", icon: "settings", label: "Maintenance", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/drivers", icon: "users", label: "Team", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/compliance", icon: "shield", label: "Compliance", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/contracts", icon: "file-text", label: "Contracts", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/leads", icon: "link", label: "Leads", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/invoices", icon: "file", label: "Invoices", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/expenses", icon: "dollar", label: "Expenses", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/earnings", icon: "trending-up", label: "Earnings", roles: ["super_admin", "owner", "admin", "driver"] as UserRole[] },
-  { href: "/dashboard/reports", icon: "bar-chart", label: "Reports", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/impound", icon: "archive", label: "Impound", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
-  { href: "/dashboard/auctions", icon: "gavel", label: "Auctions", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/rates", icon: "tag", label: "Rates", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/billing", icon: "credit-card", label: "Billing", roles: ["super_admin", "owner"] as UserRole[] },
-  { href: "/dashboard/locations", icon: "map-pin", label: "Locations", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/settings", icon: "settings", label: "Settings", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
-  { href: "/dashboard/ai-docs", icon: "file-text", label: "AI Docs", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/automation", icon: "settings", label: "Automation", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks", roles: ["super_admin", "owner", "admin"] as UserRole[] },
-  { href: "/dashboard/import", icon: "download", label: "Import/Export", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+const NAV_SECTIONS = [
+  {
+    label: "Main",
+    items: [
+      { href: "/dashboard", icon: "grid", label: "Overview", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+      { href: "/dashboard/dispatch", icon: "map", label: "Dispatch", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/live-calls", icon: "phone", label: "Live Calls", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/messages", icon: "message-circle", label: "Messages", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { href: "/dashboard/jobs", icon: "list", label: "Jobs", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+      { href: "/dashboard/calendar", icon: "calendar", label: "Calendar", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/customers", icon: "user", label: "Customers", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/leads", icon: "link", label: "Leads", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/impound", icon: "archive", label: "Impound", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+    ],
+  },
+  {
+    label: "Fleet & Team",
+    items: [
+      { href: "/dashboard/fleet", icon: "truck", label: "Fleet", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/maintenance", icon: "settings", label: "Maintenance", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/drivers", icon: "users", label: "Team", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/compliance", icon: "shield", label: "Compliance", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/subcontractors", icon: "building", label: "Subcontractors", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/kpi", icon: "trophy", label: "Driver KPI", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [
+      { href: "/dashboard/invoices", icon: "file", label: "Invoices", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/expenses", icon: "dollar", label: "Expenses", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/earnings", icon: "trending-up", label: "Earnings", roles: ["super_admin", "owner", "admin", "driver"] as UserRole[] },
+      { href: "/dashboard/reports", icon: "bar-chart", label: "Reports", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/contracts", icon: "file-text", label: "Contracts", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/auctions", icon: "gavel", label: "Auctions", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/rates", icon: "tag", label: "Rates", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/billing", icon: "credit-card", label: "Billing", roles: ["super_admin", "owner"] as UserRole[] },
+    ],
+  },
+  {
+    label: "AI & Tools",
+    items: [
+      { href: "/dashboard/bland-config", icon: "cpu", label: "Bland.ai", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/retell-config", icon: "phone", label: "Retell AI", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/calls", icon: "phone", label: "Call History", roles: ["super_admin", "owner", "admin", "dispatcher"] as UserRole[] },
+      { href: "/dashboard/driver", icon: "user", label: "Driver View", roles: ["super_admin", "owner", "admin", "driver"] as UserRole[] },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { href: "/dashboard/settings", icon: "settings", label: "Settings", roles: ["super_admin", "owner", "admin", "dispatcher", "driver"] as UserRole[] },
+      { href: "/dashboard/admin-visibility", icon: "settings", label: "Admin Visibility", roles: ["super_admin", "owner"] as UserRole[] },
+      { href: "/dashboard/locations", icon: "map-pin", label: "Locations", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/ai-docs", icon: "file-text", label: "AI Docs", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/automation", icon: "settings", label: "Automation", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/quickbooks", icon: "bar-chart", label: "QuickBooks", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+      { href: "/dashboard/import", icon: "download", label: "Import/Export", roles: ["super_admin", "owner", "admin"] as UserRole[] },
+    ],
+  },
 ];
 
 function canAccess(role: UserRole | string, item: { roles: UserRole[] }): boolean {
@@ -92,6 +127,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<{ firstName: string; lastName: string; role: string; email: string; orgId: string } | null>(null);
   const [org, setOrg] = useState<{ name: string; status: string; id: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   useKeyboardShortcuts();
   const { searchOpen, openSearch, closeSearch } = useGlobalSearch();
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette();
@@ -119,7 +155,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const visibleNavItems = NAV_ITEMS.filter(item => canAccess(user.role, item));
+  const allNavItems = NAV_SECTIONS.flatMap(s => s.items);
+  const visibleNavItems = allNavItems.filter(item => canAccess(user.role, item));
 
   const QUICK_TABS_BASE = [
     { href: "/dashboard", label: "Overview" },
@@ -140,7 +177,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/settings", label: "Settings" },
   ];
   const visibleQuickTabs = QUICK_TABS_BASE.filter(tab => {
-    const navItem = NAV_ITEMS.find(n => n.href === tab.href);
+    const navItem = allNavItems.find(n => n.href === tab.href);
     return navItem ? canAccess(user.role, navItem) : false;
   });
 
@@ -171,20 +208,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             )}
 
-            {/* Nav */}
-            <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-              {visibleNavItems.map(item => {
-                const active = pathname === item.href;
+            {/* Nav — grouped sections */}
+            <nav className="flex-1 px-3 py-3 overflow-y-auto">
+              {NAV_SECTIONS.map(section => {
+                const visibleItems = section.items.filter(item => canAccess(user.role, item));
+                if (visibleItems.length === 0) return null;
+                const collapsed = collapsedSections[section.label] || false;
                 return (
-                  <Link key={item.href} href={item.href}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded text-[13px] font-medium transition-colors ${
-                      active
-                        ? "bg-[#533afd]/[0.06] text-[#533afd]"
-                        : "text-[#64748d] hover:text-[#061b31] hover:bg-[#f6f9fc]"
-                    }`}>
-                    <Icon name={item.icon} size={16} />
-                    {item.label}
-                  </Link>
+                  <div key={section.label} className="mb-1">
+                    <button
+                      onClick={() => setCollapsedSections(prev => ({ ...prev, [section.label]: !prev[section.label] }))}
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-medium text-[#94a3b8] uppercase tracking-[0.1em] hover:text-[#64748d] transition-colors"
+                    >
+                      {section.label}
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" className={`transition-transform ${collapsed ? "" : "rotate-90"}`}><polyline points="3 1 7 5 3 9" /></svg>
+                    </button>
+                    {!collapsed && visibleItems.map(item => {
+                      const active = pathname === item.href;
+                      return (
+                        <Link key={item.href} href={item.href}
+                          className={`flex items-center gap-2.5 px-3 py-1.5 rounded text-[13px] font-medium transition-colors ${
+                            active
+                              ? "bg-[#533afd]/[0.06] text-[#533afd]"
+                              : "text-[#64748d] hover:text-[#061b31] hover:bg-[#f6f9fc]"
+                          }`}>
+                          <Icon name={item.icon} size={16} />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </nav>
