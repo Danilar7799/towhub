@@ -125,6 +125,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/dispatch", label: "Dispatch" },
     { href: "/dashboard/bland-config", label: "Bland.ai" },
     { href: "/dashboard/retell-config", label: "Retell AI" },
+    { href: "/dashboard/admin-visibility", label: "Admin Visibility" },
+    { href: "/dashboard/driver", label: "Driver View" },
     { href: "/dashboard/motor-clubs", label: "Motor Clubs" },
     { href: "/dashboard/calls", label: "Call Logs" },
     { href: "/dashboard/customers", label: "Customers" },
