@@ -60,12 +60,16 @@ export async function POST(req: NextRequest) {
     let orgId = metadata?.org_id;
 
     if (!orgId) {
-      // Find org by the Bland phone number (to field)
+      // Find org by the Bland phone number (to field) — normalize for comparison
+      const normalize = (p: string) => p.replace(/\D/g, ""); // digits only
+      const toDigits = normalize(body.to || "");
       const orgs = await db.select().from(organizations);
       const org = orgs.find(o => {
         const settings = o.settings as Record<string, unknown>;
         const blandConfig = settings?.blandConfig as Record<string, unknown>;
-        return blandConfig?.phoneNumber === body.to || o.blandPhoneNumber === body.to;
+        const configPhone = normalize(String(blandConfig?.phoneNumber || ""));
+        const blandPhone = normalize(String(o.blandPhoneNumber || ""));
+        return configPhone === toDigits || blandPhone === toDigits || toDigits.endsWith(configPhone) || toDigits.endsWith(blandPhone);
       });
       if (org) orgId = org.id;
     }
