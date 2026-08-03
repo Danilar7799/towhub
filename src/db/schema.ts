@@ -5,7 +5,7 @@ import { relations } from "drizzle-orm";
 export const orgStatusEnum = pgEnum("org_status", ["pending", "approved", "suspended", "rejected"]);
 export const userRoleEnum = pgEnum("user_role", ["super_admin", "owner", "admin", "dispatcher", "driver"]);
 export const jobStatusEnum = pgEnum("job_status", ["pending", "assigned", "en_route", "on_scene", "towing", "completed", "cancelled"]);
-export const jobSourceEnum = pgEnum("job_source", ["manual", "phone", "yelp", "thumbtack", "google", "ai_dispatcher", "app"]);
+export const jobSourceEnum = pgEnum("job_source", ["manual", "phone", "yelp", "thumbtack", "google", "ai_dispatcher", "app", "motor_club"]);
 export const leadStatusEnum = pgEnum("lead_status", ["new", "contacted", "quoted", "accepted", "declined", "expired"]);
 export const vehicleTypeEnum = pgEnum("vehicle_type", ["flatbed", "wheel_lift", "heavy_duty", "medium_duty", "motorcycle", "other"]);
 export const expenseCategoryEnum = pgEnum("expense_category", ["fuel", "maintenance", "insurance", "tolls", "supplies", "other"]);
