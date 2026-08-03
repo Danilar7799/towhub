@@ -17,10 +17,10 @@ import { eq } from "drizzle-orm";
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const callSid = formData.get("CallSid") as string;
-    const from = formData.get("From") as string; // Caller's phone number
-    const to = formData.get("To") as string;     // Our Twilio number
-    const callStatus = formData.get("CallStatus") as string;
+    const callSid = (formData as any).get("CallSid") as string;
+    const from = (formData as any).get("From") as string; // Caller's phone number
+    const to = (formData as any).get("To") as string;     // Our Twilio number
+    const callStatus = (formData as any).get("CallStatus") as string;
 
     console.log("[Twilio Voice] Incoming call:", { callSid, from, to, callStatus });
 

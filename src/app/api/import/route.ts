@@ -96,8 +96,8 @@ export async function POST(req: NextRequest) {
   if (!user || !user.orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const formData = await req.formData();
-  const file = formData.get("file") as File | null;
-  const type = formData.get("type") as string;
+  const file = (formData as any).get("file") as File | null;
+  const type = (formData as any).get("type") as string;
 
   if (!file || !type) return NextResponse.json({ error: "file and type required" }, { status: 400 });
   if (!["customers", "jobs", "fleet", "drivers"].includes(type)) {

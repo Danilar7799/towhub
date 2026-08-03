@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
-    const file = formData.get("file") as File;
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string;
-    const documentType = formData.get("documentType") as string; // enum value
-    const jobId = formData.get("jobId") as string;
-    const vehicleId = formData.get("vehicleId") as string;
-    const customerId = formData.get("customerId") as string;
-    const driverId = formData.get("driverId") as string;
+    const file = (formData as any).get("file") as File;
+    const name = (formData as any).get("name") as string;
+    const description = (formData as any).get("description") as string;
+    const documentType = (formData as any).get("documentType") as string; // enum value
+    const jobId = (formData as any).get("jobId") as string;
+    const vehicleId = (formData as any).get("vehicleId") as string;
+    const customerId = (formData as any).get("customerId") as string;
+    const driverId = (formData as any).get("driverId") as string;
 
     if (!file || !name || !documentType) {
       return NextResponse.json({ error: "file, name, and documentType are required" }, { status: 400 });

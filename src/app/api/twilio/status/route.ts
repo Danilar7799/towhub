@@ -15,12 +15,12 @@ import { eq } from "drizzle-orm";
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const callSid = formData.get("CallSid") as string;
-    const callStatus = formData.get("CallStatus") as string;
-    const from = formData.get("From") as string;
-    const to = formData.get("To") as string;
-    const duration = formData.get("CallDuration") as string;
-    const recordingUrl = formData.get("RecordingUrl") as string | null;
+    const callSid = (formData as any).get("CallSid") as string;
+    const callStatus = (formData as any).get("CallStatus") as string;
+    const from = (formData as any).get("From") as string;
+    const to = (formData as any).get("To") as string;
+    const duration = (formData as any).get("CallDuration") as string;
+    const recordingUrl = (formData as any).get("RecordingUrl") as string | null;
 
     console.log("[Twilio Status] Call update:", { callSid, callStatus, from, to, duration, recordingUrl });
 
