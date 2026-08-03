@@ -49,8 +49,10 @@ export default function DriversPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [selectedUser, setSelectedUser] = useState<TeamUser | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [messageText, setMessageText] = useState("");
+  const [editForm, setEditForm] = useState({ firstName: "", lastName: "", email: "", phone: "", role: "driver", startDate: "", birthday: "", schedule: "", payRate: "", notes: "" });
   const [form, setForm] = useState({ email: "", firstName: "", lastName: "", phone: "", role: "driver", password: "" });
 
   const load = async () => {
@@ -91,6 +93,64 @@ export default function DriversPage() {
     await fetch("/api/drivers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: userId, assignedVehicleId: vehicleId }) });
     toast.success("Vehicle assigned");
     load();
+  };
+
+  const openEdit = (u: TeamUser) => {
+    setEditForm({
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email,
+      phone: u.phone || "",
+      role: u.role,
+      startDate: u.startDate || "",
+      birthday: u.birthday || "",
+      schedule: u.schedule || "",
+      payRate: u.payRate?.toString() || "",
+      notes: u.notes || "",
+    });
+    setShowEdit(true);
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    const res = await fetch("/api/drivers", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: selectedUser.id,
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        phone: editForm.phone || undefined,
+        role: editForm.role,
+        startDate: editForm.startDate || undefined,
+        birthday: editForm.birthday || undefined,
+        schedule: editForm.schedule || undefined,
+        payRate: editForm.payRate ? parseFloat(editForm.payRate) : undefined,
+        notes: editForm.notes || undefined,
+      }),
+    });
+    if (res.ok) {
+      toast.success("Profile updated");
+      setShowEdit(false);
+      load();
+      setSelectedUser(prev => prev ? {
+        ...prev,
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        phone: editForm.phone || undefined,
+        role: editForm.role,
+        startDate: editForm.startDate || undefined,
+        birthday: editForm.birthday || undefined,
+        schedule: editForm.schedule || undefined,
+        payRate: editForm.payRate ? parseFloat(editForm.payRate) : undefined,
+        notes: editForm.notes || undefined,
+      } : null);
+    } else {
+      toast.error("Failed to update profile");
+    }
   };
 
   const sendMessage = async () => {
@@ -296,7 +356,13 @@ export default function DriversPage() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => { openEdit(selectedUser); }}
+                    className="flex items-center justify-center gap-1.5 py-2 bg-[#f6f9fc] border border-[#e5edf5] rounded text-[12px] font-medium hover:bg-[#eef3f8] transition-colors press-active"
+                  >
+                    ✏️ Edit
+                  </button>
                   <button
                     onClick={() => setShowMessage(true)}
                     className="flex items-center justify-center gap-1.5 py-2 bg-[#533afd] text-white rounded text-[12px] font-medium hover:bg-[#4434d4] transition-colors press-active"
@@ -521,6 +587,77 @@ export default function DriversPage() {
                 ✉️ Send
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEdit && selectedUser && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowEdit(false)}>
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-[0_50px_100px_-20px_rgba(50,50,93,0.25)] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-[18px] font-semibold tracking-[-0.3px]">Edit Profile</h2>
+              <button onClick={() => setShowEdit(false)} className="text-[18px] text-[#64748d] hover:text-[#061b31]">×</button>
+            </div>
+            <form onSubmit={saveEdit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">First Name *</label>
+                  <input required value={editForm.firstName} onChange={e => setEditForm(f => ({ ...f, firstName: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Last Name *</label>
+                  <input required value={editForm.lastName} onChange={e => setEditForm(f => ({ ...f, lastName: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Email *</label>
+                <input required type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Phone</label>
+                  <input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Role *</label>
+                  <select value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none">
+                    <option value="driver">🚗 Driver</option>
+                    <option value="dispatcher">📞 Dispatcher</option>
+                    <option value="admin">⚙️ Admin</option>
+                    <option value="subcontractor">🏢 Subcontractor</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Start Date</label>
+                  <input type="date" value={editForm.startDate} onChange={e => setEditForm(f => ({ ...f, startDate: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Birthday</label>
+                  <input type="date" value={editForm.birthday} onChange={e => setEditForm(f => ({ ...f, birthday: e.target.value }))} className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Work Schedule</label>
+                  <input value={editForm.schedule} onChange={e => setEditForm(f => ({ ...f, schedule: e.target.value }))} placeholder="e.g. Mon-Fri 7am-5pm" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Pay Rate ($/hr)</label>
+                  <input type="number" step="0.01" value={editForm.payRate} onChange={e => setEditForm(f => ({ ...f, payRate: e.target.value }))} placeholder="e.g. 25.00" className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[#273951] mb-1.5">Private Notes (owner/dispatcher only)</label>
+                <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Notes visible only to dispatchers and owner..." className="w-full px-3.5 py-2.5 border border-[#e5edf5] rounded text-[13px] focus:border-[#533afd] outline-none resize-none bg-[#fefce8]" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-2.5 border border-[#e5edf5] rounded text-[13px] font-medium hover:bg-[#f6f9fc]">Cancel</button>
+                <button type="submit" className="flex-1 bg-[#533afd] text-white py-2.5 rounded text-[13px] font-medium hover:bg-[#4434d4] press-active">Save Changes</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
