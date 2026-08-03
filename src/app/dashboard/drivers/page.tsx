@@ -496,15 +496,46 @@ export default function DriversPage() {
                 </div>
               )}
 
-              {/* Documents */}
+              {/* Documents — categorized */}
               <div className="p-4 space-y-3 border-b border-[#e5edf5]">
                 <div className="text-[11px] text-[#64748d] uppercase tracking-wider">Documents</div>
-                <DocumentUploader
-                  entityType="driver_documents"
-                  entityId={selectedUser.id}
-                  orgId={""}
-                />
-                <div className="text-[10px] text-[#94a3b8]">CDL, medical card, insurance, etc.</div>
+                <div className="space-y-2">
+                  {[
+                    { id: "cdl", label: "CDL License", icon: "🪪", required: true },
+                    { id: "medical", label: "Medical Card", icon: "🏥", required: true },
+                    { id: "insurance", label: "Insurance", icon: "🛡️", required: true },
+                    { id: "drug_test", label: "Drug Test", icon: "🧪", required: false },
+                    { id: "mvr", label: "MVR (Driving Record)", icon: "📋", required: false },
+                    { id: "photo_id", label: "Photo ID", icon: "🪪", required: false },
+                    { id: "other", label: "Other", icon: "📄", required: false },
+                  ].map(doc => (
+                    <div key={doc.id} className="flex items-center gap-3 p-2.5 bg-[#f6f9fc] rounded border border-[#e5edf5] hover:border-[#b9b9f9] transition-colors">
+                      <span className="text-[16px]">{doc.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[12px] font-medium text-[#061b31]">
+                          {doc.label}
+                          {doc.required && <span className="text-[#dc2626] ml-0.5">*</span>}
+                        </div>
+                        <div className="text-[10px] text-[#94a3b8]">Not uploaded</div>
+                      </div>
+                      <label className="px-2.5 py-1 bg-white border border-[#e5edf5] rounded text-[11px] font-medium text-[#533afd] hover:border-[#b9b9f9] cursor-pointer transition-colors press-active">
+                        Upload
+                        <input type="file" className="hidden" accept="image/*,.pdf" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fd = new window.FormData();
+                          fd.append("file", file);
+                          fd.append("entityType", "driver_documents");
+                          fd.append("entityId", selectedUser.id);
+                          fd.append("docType", doc.id);
+                          const res = await fetch("/api/upload", { method: "POST", body: fd });
+                          if (res.ok) toast.success(`${doc.label} uploaded`);
+                          else toast.error("Upload failed");
+                        }} />
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Actions */}
