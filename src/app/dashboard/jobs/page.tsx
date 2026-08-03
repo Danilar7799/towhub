@@ -258,7 +258,7 @@ export default function JobsPage() {
         })}
       </div>
 
-      {/* Jobs Grid */}
+      {/* Jobs Grid + Detail Panel */}
       {filtered.length === 0 ? (
         <div className="bg-white border border-[#e5edf5] rounded-lg p-12 text-center">
           <div className="text-[32px] mb-3 opacity-20">📋</div>
@@ -267,7 +267,10 @@ export default function JobsPage() {
           <button onClick={() => setShowAdd(true)} className="bg-[#533afd] text-white px-4 py-2 rounded text-[13px] font-medium hover:bg-[#4434d4]">+ Create Job</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="flex gap-4 min-h-[400px]">
+          {/* Left: Job cards */}
+          <div className="flex-1 min-w-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {filtered.map(j => {
             const sc = STATUS_CONFIG[j.status] || STATUS_CONFIG.pending;
             const tags = j.tags || [];
@@ -364,6 +367,59 @@ export default function JobsPage() {
               </div>
             );
           })}
+            </div>
+          </div>
+
+          {/* Right: Detail Panel */}
+          {selectedJob && (
+            <div className="w-[320px] shrink-0">
+              <div className="bg-white border border-[#e5edf5] rounded-lg overflow-hidden sticky top-4">
+                <div className="px-4 py-3 border-b border-[#e5edf5] bg-gradient-to-b from-[#533afd]/[0.03] to-transparent flex items-center justify-between">
+                  <div>
+                    <div className="text-[15px] font-semibold text-[#061b31]">{selectedJob.customerName || "Walk-in"}</div>
+                    <div className="text-[10px] text-[#94a3b8] font-mono">#{selectedJob.id.slice(0, 8)}</div>
+                  </div>
+                  <button onClick={() => setSelectedJob(null)} className="text-[16px] text-[#94a3b8] hover:text-[#061b31]">×</button>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    {(() => { const sc = STATUS_CONFIG[selectedJob.status] || STATUS_CONFIG.pending; return (
+                      <span className="badge" style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>{sc.label}</span>
+                    ); })()}
+                    {selectedJob.totalAmount && <span className="text-[15px] font-semibold tabular-nums">${selectedJob.totalAmount.toFixed(0)}</span>}
+                  </div>
+                  <div className="bg-[#f6f9fc] rounded p-2.5">
+                    <div className="text-[10px] text-[#64748d] uppercase tracking-wider mb-1">Customer</div>
+                    <div className="text-[13px] font-medium">{selectedJob.customerName || "—"}</div>
+                    {selectedJob.customerPhone && <div className="text-[12px] text-[#533afd]">{selectedJob.customerPhone}</div>}
+                  </div>
+                  <div className="bg-[#f6f9fc] rounded p-2.5">
+                    <div className="text-[10px] text-[#64748d] uppercase tracking-wider mb-1">Pickup</div>
+                    <div className="text-[12px]">{selectedJob.pickupAddress}</div>
+                    {selectedJob.destinationAddress && (<><div className="text-[10px] text-[#64748d] uppercase tracking-wider mb-1 mt-2">Destination</div><div className="text-[12px]">{selectedJob.destinationAddress}</div></>)}
+                  </div>
+                  {(selectedJob.towVehicleMake || selectedJob.towVehicleModel) && (
+                    <div className="bg-[#f6f9fc] rounded p-2.5">
+                      <div className="text-[10px] text-[#64748d] uppercase tracking-wider mb-1">Vehicle</div>
+                      <div className="text-[12px] font-medium">{selectedJob.towVehicleYear} {selectedJob.towVehicleMake} {selectedJob.towVehicleModel}</div>
+                    </div>
+                  )}
+                  {selectedJob.notes && (
+                    <div className="bg-[#f6f9fc] rounded p-2.5">
+                      <div className="text-[10px] text-[#64748d] uppercase tracking-wider mb-1">Notes</div>
+                      <div className="text-[12px] text-[#061b31] whitespace-pre-wrap">{selectedJob.notes}</div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedJob.status !== "completed" && selectedJob.status !== "cancelled" && (
+                      <button onClick={() => advanceStatus(selectedJob)} className="py-2 bg-[#533afd] text-white rounded text-[12px] font-medium hover:bg-[#4434d4]">➡️ Next</button>
+                    )}
+                    <button onClick={() => setShowDriverAssign(selectedJob.id)} className="py-2 bg-[#f6f9fc] border border-[#e5edf5] rounded text-[12px] font-medium hover:bg-[#eef3f8]">🚗 Assign</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
