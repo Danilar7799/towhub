@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/lib/toast";
+import { useAuth } from "@/lib/auth-context";
 import { CopyButton } from "@/components/micro-interactions";
 import { DocumentUploader } from "@/components/ui";
 
@@ -14,6 +15,8 @@ interface TeamUser {
   id: string; email: string; firstName: string; lastName: string;
   phone?: string; role: string; isActive: boolean; createdAt: string;
   photoUrl?: string; assignedVehicleId?: string;
+  startDate?: string; birthday?: string; schedule?: string;
+  payRate?: number; notes?: string;
 }
 
 interface Vehicle {
@@ -40,6 +43,7 @@ const ROLE_CONFIG: Record<string, { bg: string; text: string; border: string; ic
 
 export default function DriversPage() {
   const toast = useToast();
+  const { user } = useAuth();
   const [users, setUsers] = useState<TeamUser[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [activeCategory, setActiveCategory] = useState("all");
@@ -182,72 +186,76 @@ export default function DriversPage() {
               {filtered.map(u => {
                 const rc = ROLE_CONFIG[u.role] || ROLE_CONFIG.driver;
                 const vehicle = getVehicle(u.assignedVehicleId);
+                // Tenure calculation
+                const startDate = u.startDate || u.createdAt;
+                const tenureMonths = Math.floor((Date.now() - new Date(startDate).getTime()) / (30.4 * 24 * 60 * 60 * 1000));
+                const tenureYears = Math.floor(tenureMonths / 12);
+                const tenureRemainder = tenureMonths % 12;
                 return (
                   <div
                     key={u.id}
                     onClick={() => setSelectedUser(u)}
-                    className={`bg-white border rounded-lg p-4 cursor-pointer card-hover ${
+                    className={`bg-white border rounded-lg overflow-hidden cursor-pointer card-hover ${
                       selectedUser?.id === u.id ? "border-[#533afd] shadow-[0_4px_12px_rgba(83,58,253,0.1)]" : "border-[#e5edf5]"
                     }`}
                   >
-                    <div className="flex items-start gap-3 mb-3">
-                      {/* Photo / Avatar */}
-                      <div className="w-12 h-12 rounded-full shrink-0 overflow-hidden border-2 border-[#e5edf5]">
-                        {u.photoUrl ? (
-                          <img src={u.photoUrl} alt={`${u.firstName} ${u.lastName}`} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[#533afd]/10 to-[#533afd]/5 flex items-center justify-center text-[16px] font-semibold text-[#533afd]">
-                            {u.firstName[0]}{u.lastName[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[14px] font-semibold text-[#061b31] truncate">{u.firstName} {u.lastName}</span>
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${u.isActive ? "bg-[#15be53]" : "bg-[#d1d5db]"}`} />
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${rc.bg} ${rc.text} ${rc.border}`}>
-                            {rc.icon} {u.role}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contact */}
-                    <div className="space-y-1 mb-3">
-                      <div className="flex items-center gap-2 text-[12px] text-[#64748d]">
-                        <span>📧</span>
-                        <span className="truncate">{u.email}</span>
-                      </div>
-                      {u.phone && (
-                        <div className="flex items-center gap-2 text-[12px] text-[#64748d]">
-                          <span>📱</span>
-                          <span>{u.phone}</span>
+                    {/* Photo header */}
+                    <div className="h-28 bg-gradient-to-br from-[#533afd]/[0.06] to-[#533afd]/[0.02] flex items-center justify-center relative">
+                      {u.photoUrl ? (
+                        <img src={u.photoUrl} alt="" className="w-20 h-20 rounded-full object-cover border-3 border-white shadow-md" />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#533afd]/20 to-[#533afd]/10 flex items-center justify-center text-[24px] font-semibold text-[#533afd] border-3 border-white shadow-md">
+                          {u.firstName[0]}{u.lastName[0]}
                         </div>
                       )}
+                      <span className={`absolute top-2 right-2 w-2.5 h-2.5 rounded-full ${u.isActive ? "bg-[#15be53]" : "bg-[#d1d5db]"}`} />
+                      <span className={`absolute top-2 left-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium border ${rc.bg} ${rc.text} ${rc.border}`}>
+                        {rc.icon} {u.role}
+                      </span>
                     </div>
 
-                    {/* Assigned Vehicle */}
-                    {vehicle && (
-                      <div className="flex items-center gap-2 p-2 bg-[#f6f9fc] rounded border border-[#e5edf5] mb-3">
-                        <span className="text-[14px]">🚛</span>
-                        <div>
-                          <div className="text-[11px] font-medium text-[#061b31]">{vehicle.name}</div>
-                          <div className="text-[10px] text-[#64748d]">{vehicle.year} {vehicle.make} {vehicle.model} {vehicle.licensePlate ? `• ${vehicle.licensePlate}` : ""}</div>
+                    <div className="p-3.5">
+                      {/* Name + tenure */}
+                      <div className="text-center mb-2">
+                        <div className="text-[14px] font-semibold text-[#061b31]">{u.firstName} {u.lastName}</div>
+                        <div className="text-[10px] text-[#64748d]">
+                          {tenureYears > 0 ? `${tenureYears}y ${tenureRemainder}m` : `${tenureMonths}m`} at company
+                          {u.schedule && <span> • {u.schedule}</span>}
                         </div>
                       </div>
-                    )}
 
-                    {/* Actions */}
-                    <div className="flex gap-1.5">
-                      <CopyButton text={`${u.firstName} ${u.lastName}\n${u.email}\n${u.phone || ""}`} label="Copy" className="flex-1 justify-center" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedUser(u); setShowMessage(true); }}
-                        className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-medium rounded border bg-[#f6f9fc] text-[#533afd] border-[#e5edf5] hover:border-[#b9b9f9] hover:bg-white transition-colors press-active"
-                      >
-                        ✉️ Message
-                      </button>
+                      {/* Vehicle badge — prominent if assigned */}
+                      {vehicle ? (
+                        <div className="flex items-center gap-2 p-2 bg-[#dcfce7] rounded border border-[#bbf7d0] mb-2">
+                          <span className="text-[16px]">🚛</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[11px] font-semibold text-[#166534] truncate">{vehicle.name}</div>
+                            <div className="text-[10px] text-[#166534] opacity-70">{vehicle.year} {vehicle.make} {vehicle.model}</div>
+                          </div>
+                        </div>
+                      ) : u.role === "driver" ? (
+                        <div className="flex items-center gap-2 p-2 bg-[#fef3c7] rounded border border-[#fde68a] mb-2">
+                          <span className="text-[14px]">⚠️</span>
+                          <div className="text-[11px] text-[#92400e]">No vehicle assigned</div>
+                        </div>
+                      ) : null}
+
+                      {/* Contact compact */}
+                      <div className="flex items-center justify-between text-[11px] text-[#64748d] mb-2">
+                        <span className="truncate">{u.phone || u.email}</span>
+                        {u.payRate && <span className="font-medium tabular-nums">${u.payRate}/hr</span>}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-1.5">
+                        <CopyButton text={`${u.firstName} ${u.lastName}\n${u.email}\n${u.phone || ""}`} label="Copy" className="flex-1 justify-center" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedUser(u); setShowMessage(true); }}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-medium rounded border bg-[#f6f9fc] text-[#533afd] border-[#e5edf5] hover:border-[#b9b9f9] hover:bg-white transition-colors press-active"
+                        >
+                          ✉️ Message
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -329,8 +337,66 @@ export default function DriversPage() {
                     <span className="text-[12px] text-[#64748d]">Joined</span>
                     <span className="text-[12px] text-[#061b31]">{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
                   </div>
+                  {selectedUser.startDate && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-[#64748d]">Start Date</span>
+                      <span className="text-[12px] text-[#061b31]">{new Date(selectedUser.startDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  {selectedUser.birthday && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-[#64748d]">Birthday</span>
+                      <span className="text-[12px] text-[#061b31]">{new Date(selectedUser.birthday).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    </div>
+                  )}
+                  {selectedUser.schedule && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-[#64748d]">Schedule</span>
+                      <span className="text-[12px] text-[#061b31]">{selectedUser.schedule}</span>
+                    </div>
+                  )}
+                  {selectedUser.payRate && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[12px] text-[#64748d]">Pay Rate</span>
+                      <span className="text-[12px] font-medium text-[#061b31] tabular-nums">${selectedUser.payRate}/hr</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] text-[#64748d]">Tenure</span>
+                    <span className="text-[12px] font-medium text-[#533afd]">
+                      {(() => {
+                        const s = selectedUser.startDate || selectedUser.createdAt;
+                        const m = Math.floor((Date.now() - new Date(s).getTime()) / (30.4 * 24 * 60 * 60 * 1000));
+                        const y = Math.floor(m / 12);
+                        return y > 0 ? `${y}y ${m % 12}m` : `${m} months`;
+                      })()}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {/* Private Notes (owner/dispatcher only) */}
+              {["owner", "super_admin", "admin", "dispatcher"].includes(user?.role || "") && (
+                <div className="p-4 space-y-3 border-b border-[#e5edf5]">
+                  <div className="text-[11px] text-[#64748d] uppercase tracking-wider">🔒 Private Notes</div>
+                  <textarea
+                    value={selectedUser.notes || ""}
+                    onChange={e => {
+                      const updated = { ...selectedUser, notes: e.target.value };
+                      setSelectedUser(updated);
+                    }}
+                    onBlur={() => {
+                      if (selectedUser.notes !== undefined) {
+                        fetch("/api/drivers", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: selectedUser.id, notes: selectedUser.notes }) });
+                      }
+                    }}
+                    placeholder="Notes visible only to dispatchers and owner..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-[#e5edf5] rounded text-[12px] outline-none resize-none focus:border-[#533afd] bg-[#fefce8]"
+                  />
+                  <div className="text-[10px] text-[#94a3b8]">Only dispatchers and owner can see these notes</div>
+                </div>
+              )}
 
               {/* Vehicle Assignment (drivers only) */}
               {selectedUser.role === "driver" && (
