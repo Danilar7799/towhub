@@ -308,7 +308,12 @@ export default function DriversPage() {
 
                       {/* Actions */}
                       <div className="flex gap-1.5">
-                        <CopyButton text={`${u.firstName} ${u.lastName}\n${u.email}\n${u.phone || ""}`} label="Copy" className="flex-1 justify-center" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openEdit(u); }}
+                          className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-medium rounded border bg-[#f6f9fc] text-[#061b31] border-[#e5edf5] hover:border-[#b9b9f9] hover:bg-white transition-colors press-active"
+                        >
+                          ✏️ Edit
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelectedUser(u); setShowMessage(true); }}
                           className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[11px] font-medium rounded border bg-[#f6f9fc] text-[#533afd] border-[#e5edf5] hover:border-[#b9b9f9] hover:bg-white transition-colors press-active"
